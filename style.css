@@ -204,6 +204,19 @@ button.ghost {
   color: var(--danger);
 }
 
+/* ---------- Role template picker ---------- */
+
+.template-picker {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  background-image: linear-gradient(180deg, var(--surface-2), #1a1d28);
+}
+
+.template-picker:focus {
+  color: var(--text);
+}
+
 /* ---------- Filters ---------- */
 
 .filter-grid {

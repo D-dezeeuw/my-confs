@@ -15,6 +15,71 @@ import {
   getPathObj,
 } from "spektrum";
 
+// ---------- role templates ---------------------------------------------
+
+const ROLE_TEMPLATES = [
+  {
+    id: "cto",
+    label: "Fractional CTO",
+    text:
+      "I am a fractional CTO working with development teams and the board to adapt to the AI transition, make them work more efficient, capable with the latest technological advancements and automation.",
+  },
+  {
+    id: "frontend",
+    label: "Frontend Developer",
+    text:
+      "Senior frontend engineer working in TypeScript / React / Next.js. Interested in performance, accessibility, design systems, and how AI-assisted code generation fits into a production frontend workflow. Less interested in beginner JS talks or framework-flavor-of-the-month.",
+  },
+  {
+    id: "backend",
+    label: "Backend Developer",
+    text:
+      "Backend engineer working primarily in Go / Python / Node, building API services and event-driven systems. Interested in production-grade observability, security, data pipelines, and pragmatic patterns for adding AI agents to existing services. Skip introductory cloud talks.",
+  },
+  {
+    id: "fullstack",
+    label: "Full-stack Developer",
+    text:
+      "Full-stack developer (TypeScript / Node / Postgres) shipping features end-to-end. Interested in faster feedback loops, AI-assisted dev workflows (Cursor, Claude Code, Copilot), zero-trust security patterns, and useful agentic AI patterns I can apply Monday.",
+  },
+  {
+    id: "product",
+    label: "Product Owner / Manager",
+    text:
+      "Product owner working with engineering and design to ship customer value. Interested in AI-driven product discovery and validation, prioritisation under regulatory constraints (EU AI Act / GDPR), and how engineering teams adopt agentic tools without slowing delivery. Less interested in deep low-level engineering talks.",
+  },
+  {
+    id: "qa",
+    label: "QA / Tester",
+    text:
+      "QA engineer / SDET working on test automation and quality strategy. Interested in AI-augmented testing (test generation, flake reduction, bug reproduction), accessibility testing, and how the QA role evolves as agents take on more of the test cycle. Skip pure dev framework deep-dives.",
+  },
+  {
+    id: "devops",
+    label: "DevOps / Platform Engineer",
+    text:
+      "Platform / DevOps engineer running CI/CD and cloud infra (Kubernetes, GitHub Actions, Terraform). Interested in golden paths, AI-assisted incident response, secure supply chain (SBOMs, slopsquatting defenses), cost-aware delivery, and platform-as-product practices.",
+  },
+  {
+    id: "em",
+    label: "Engineering Manager",
+    text:
+      "Engineering manager leading a team of 5–12 engineers. Interested in productivity culture, incident management, AI org-change practices, social/network thinking for team health, and leading through the agentic SDLC transition. Less interested in single-framework deep-dives.",
+  },
+  {
+    id: "founder",
+    label: "Solo founder / Indie hacker",
+    text:
+      "Solo founder building AI-powered SaaS. Interested in vibe-coding workflows, MCP / agent skills, AI-driven product validation, fast paths from spec to shipped feature, and what's actually working for AI-native teams. Pragmatic over academic; skip enterprise governance panels.",
+  },
+  {
+    id: "data",
+    label: "Data / ML Engineer",
+    text:
+      "Data / ML engineer working on production model pipelines and agentic systems. Interested in dataset management, retrieval / context engineering for agents, data-aware MCP servers, and security implications of LLM-integrated services.",
+  },
+];
+
 // ---------- storage keys ------------------------------------------------
 
 const STORAGE = {
@@ -254,6 +319,19 @@ function normalize(s) {
 function registerHandlers() {
   defineFn("toggleSettings", (_el, state) => {
     setValue("settingsOpen", !state.settingsOpen);
+  });
+
+  defineFn("applyTemplate", (el) => {
+    const id = el.value;
+    if (!id) return;
+    const tmpl = ROLE_TEMPLATES.find((t) => t.id === id);
+    if (!tmpl) return;
+    setValue("context", tmpl.text);
+    el.value = "";
+    setValue("status", {
+      text: `Template applied: ${tmpl.label}. Edit to taste.`,
+      kind: "muted",
+    });
   });
 
   defineFn("toggleTagFilter", (el, state) => {

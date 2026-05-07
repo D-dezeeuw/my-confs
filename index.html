@@ -37,6 +37,25 @@
             placeholder="e.g. Staff engineer on a payments platform. Strong in Go/Python, getting up to speed on agentic AI. Interested in production-grade LLM patterns, observability, and security. Skip beginner JS talks. Hard preference: hands-on workshops over panels."
           ></textarea>
 
+          <select
+            class="template-picker"
+            data-action="change"
+            data-fn="applyTemplate"
+            aria-label="Apply a role template to the context above"
+          >
+            <option value="">Apply role template…</option>
+            <option value="cto">Fractional CTO</option>
+            <option value="frontend">Frontend Developer</option>
+            <option value="backend">Backend Developer</option>
+            <option value="fullstack">Full-stack Developer</option>
+            <option value="product">Product Owner / Manager</option>
+            <option value="qa">QA / Tester</option>
+            <option value="devops">DevOps / Platform Engineer</option>
+            <option value="em">Engineering Manager</option>
+            <option value="founder">Solo founder / Indie hacker</option>
+            <option value="data">Data / ML Engineer</option>
+          </select>
+
           <div class="filter-grid">
             <label>
               Tracks
