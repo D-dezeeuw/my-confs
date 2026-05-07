@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevWorld 2026 — Personalized Schedule</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./config.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "spektrum": "./vendor/spektrum.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <h1>DevWorld 2026</h1>
+        <span class="tag">Personalized schedule recommender</span>
+      </div>
+      <button class="ghost" data-if="view === 'schedule'" data-action="click" data-fn="toggleSettings">Settings</button>
+    </header>
+
+    <div class="layout" data-if="view === 'schedule'">
+      <aside class="sidebar">
+        <section class="card">
+          <h2>Your professional context</h2>
+          <p class="muted">
+            Describe your role, experience, what you want to learn, and anything to skip.
+            The more specific, the better the picks.
+          </p>
+          <textarea
+            data-model="context"
+            rows="9"
+            placeholder="e.g. Staff engineer on a payments platform. Strong in Go/Python, getting up to speed on agentic AI. Interested in production-grade LLM patterns, observability, and security. Skip beginner JS talks. Hard preference: hands-on workshops over panels."
+          ></textarea>
+
+          <div class="filter-grid">
+            <label>
+              Tracks
+              <div
+                class="chip-row"
+                data-each="tagsAvailable"
+                data-as="filterTag"
+                data-key="filterTag"
+              >
+                <span
+                  class="chip"
+                  :class="{active: tagFilters.includes(filterTag)}"
+                  data-action="click"
+                  data-fn="toggleTagFilter"
+                  data-id="filterTag"
+                  >{{filterTag}}</span
+                >
+              </div>
+            </label>
+            <label>
+              Stages
+              <div
+                class="chip-row"
+                data-each="stagesAvailable"
+                data-as="filterStage"
+                data-key="filterStage"
+              >
+                <span
+                  class="chip"
+                  :class="{active: stageFilters.includes(filterStage)}"
+                  data-action="click"
+                  data-fn="toggleStageFilter"
+                  data-id="filterStage"
+                  >{{filterStage}}</span
+                >
+              </div>
+            </label>
+          </div>
+
+          <button
+            class="primary"
+            :disabled="loading"
+            data-action="click"
+            data-fn="recommend"
+          >
+            {{loading ? 'Thinking…' : 'Get recommendations'}}
+          </button>
+          <button
+            class="ghost"
+            data-if="hasRecommendations"
+            data-action="click"
+            data-fn="clearRecommendations"
+          >
+            Clear recommendations
+          </button>
+          <p
+            class="status"
+            :class="{error: status.kind === 'error', muted: status.kind === 'muted'}"
+          >
+            {{status.text}}
+          </p>
+        </section>
+
+        <section class="card settings-panel" data-if="settingsOpen">
+          <h2>Settings</h2>
+          <label>
+            OpenRouter API key
+            <input
+              type="password"
+              data-model="apiKey"
+              autocomplete="off"
+              placeholder="sk-or-v1-..."
+            />
+            <small class="muted">Stored only in your browser (localStorage). Overrides the default.</small>
+          </label>
+          <label>
+            Model
+            <select data-model="model">
+              <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
+              <option value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</option>
+              <option value="anthropic/claude-opus-4.5">anthropic/claude-opus-4.5</option>
+              <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+              <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+            </select>
+          </label>
+          <button class="primary" data-action="click" data-fn="saveSettings">Save</button>
+        </section>
+
+        <section class="card overall-advice" data-if="hasRecommendations">
+          <h2>Strategy for your day</h2>
+          <p>{{overallAdvice}}</p>
+        </section>
+      </aside>
+
+      <main
+        class="schedule"
+        data-each="slots"
+        data-as="bucket"
+        data-key="bucket.time"
+      >
+        <section
+          class="slot"
+          :class="{empty: bucket.visibleCount === 0}"
+        >
+          <div class="slot-header">
+            <span class="slot-time">{{bucket.label}}</span>
+            <span class="slot-meta">{{bucket.parallelText}}</span>
+          </div>
+          <div
+            class="slot-grid"
+            data-each="bucket.sessions"
+            data-as="ses"
+            data-key="ses.id"
+          >
+            <article
+              class="session"
+              :class="{hidden: !ses.visible, pick: ses.recKind === 'pick', alt: ses.recKind === 'alt'}"
+            >
+              <span
+                class="badge"
+                data-if="ses.recLabel"
+                :class="{pick: ses.recKind === 'pick', alt: ses.recKind === 'alt'}"
+                >{{ses.recLabel}}</span
+              >
+              <h3 class="session-title">{{ses.title}}</h3>
+              <div class="session-meta">{{ses.metaText}}</div>
+              <div
+                class="session-tags"
+                data-each="ses.tags"
+                data-as="pill"
+                data-key="pill"
+              >
+                <span class="session-tag">{{pill}}</span>
+              </div>
+              <div class="rationale" data-if="ses.recRationale">{{ses.recRationale}}</div>
+              <details data-if="ses.description">
+                <summary>Description</summary>
+                <div class="session-desc">{{ses.description}}</div>
+              </details>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <section class="agenda" data-if="view === 'agenda'">
+      <header class="agenda-header">
+        <button class="ghost back" data-action="click" data-fn="goSchedule">← Schedule</button>
+        <div class="agenda-heading">
+          <h2>Your DevWorld 2026</h2>
+          <span class="muted">{{agendaItems.length}} picks</span>
+        </div>
+      </header>
+
+      <div class="agenda-empty" data-if="agendaItems.length === 0">
+        <p class="muted">No recommendations yet. Head back to the schedule, fill in your context, and click <strong>Get recommendations</strong>.</p>
+        <button class="primary" data-action="click" data-fn="goSchedule">Go to schedule</button>
+      </div>
+
+      <details class="agenda-strategy card" data-if="overallAdvice">
+        <summary><strong>Strategy for your day</strong></summary>
+        <p>{{overallAdvice}}</p>
+      </details>
+
+      <ol class="agenda-list" data-each="agendaItems" data-as="pick" data-key="pick.id">
+        <li class="agenda-row">
+          <div class="agenda-time">{{pick.timeLabel}}</div>
+          <article class="agenda-card">
+            <h3 class="agenda-title">{{pick.title}}</h3>
+            <div class="agenda-meta">{{pick.metaText}}</div>
+            <p class="agenda-rationale" data-if="pick.rationale">{{pick.rationale}}</p>
+            <div
+              class="agenda-tags"
+              data-each="pick.tags"
+              data-as="lbl"
+              data-key="lbl"
+            >
+              <span class="agenda-pill">{{lbl}}</span>
+            </div>
+          </article>
+        </li>
+      </ol>
+    </section>
+
+    <button
+      class="fab"
+      data-if="view === 'schedule' && hasRecommendations"
+      data-action="click"
+      data-fn="goAgenda"
+    >
+      Your agenda · {{agendaItems.length}}
+    </button>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
