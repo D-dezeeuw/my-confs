@@ -20,7 +20,7 @@
         <h1>DevWorld 2026</h1>
         <span class="tag">Personalized schedule recommender</span>
       </div>
-      <button class="ghost" data-if="view === 'schedule'" data-action="click" data-fn="toggleSettings">Settings</button>
+      <button class="ghost" data-action="click" data-fn="toggleSettings">Settings</button>
     </header>
 
     <div class="layout" data-if="view === 'schedule'">
@@ -117,31 +117,6 @@
           >
             {{status.text}}
           </p>
-        </section>
-
-        <section class="card settings-panel" data-if="settingsOpen">
-          <h2>Settings</h2>
-          <label>
-            OpenRouter API key
-            <input
-              type="password"
-              data-model="apiKey"
-              autocomplete="off"
-              placeholder="sk-or-v1-..."
-            />
-            <small class="muted">Stored only in your browser (localStorage). Overrides the default.</small>
-          </label>
-          <label>
-            Model
-            <select data-model="model">
-              <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
-              <option value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</option>
-              <option value="anthropic/claude-opus-4.5">anthropic/claude-opus-4.5</option>
-              <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
-              <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
-            </select>
-          </label>
-          <button class="primary" data-action="click" data-fn="saveSettings">Save</button>
         </section>
 
         <section class="card overall-advice" data-if="hasRecommendations">
@@ -248,6 +223,56 @@
     >
       Your agenda · {{agendaItems.length}}
     </button>
+
+    <div
+      class="modal-overlay"
+      data-if="settingsOpen"
+      data-action="click"
+      data-fn="backdropClose"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
+    >
+      <section class="modal-card">
+        <header class="modal-header">
+          <h2 id="settings-title">Settings</h2>
+          <button
+            class="ghost modal-close"
+            data-action="click"
+            data-fn="closeSettings"
+            aria-label="Close settings"
+          >
+            ×
+          </button>
+        </header>
+        <div class="modal-body">
+          <label>
+            OpenRouter API key
+            <input
+              type="password"
+              data-model="apiKey"
+              autocomplete="off"
+              placeholder="sk-or-v1-..."
+            />
+            <small class="muted">Stored only in your browser (localStorage). Overrides the default.</small>
+          </label>
+          <label>
+            Model
+            <select data-model="model">
+              <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
+              <option value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</option>
+              <option value="anthropic/claude-opus-4.5">anthropic/claude-opus-4.5</option>
+              <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+              <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+            </select>
+          </label>
+        </div>
+        <footer class="modal-footer">
+          <button class="ghost" data-action="click" data-fn="closeSettings">Cancel</button>
+          <button class="primary" data-action="click" data-fn="saveSettings">Save</button>
+        </footer>
+      </section>
+    </div>
 
     <script type="module" src="./app.js"></script>
   </body>

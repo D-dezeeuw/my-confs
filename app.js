@@ -100,6 +100,7 @@ const STORAGE = {
   registerComputeds();
   registerPersistence();
   wireHashRouting();
+  wireGlobalKeys();
   await loadSessions();
   bindDOM();
   run();
@@ -321,6 +322,16 @@ function registerHandlers() {
     setValue("settingsOpen", !state.settingsOpen);
   });
 
+  defineFn("closeSettings", () => {
+    setValue("settingsOpen", false);
+  });
+
+  defineFn("backdropClose", (el, _state, _delta, _value, ev) => {
+    // Only close when the click landed on the backdrop itself, not on a
+    // child (the modal card or any of its inputs/buttons).
+    if (ev && ev.target === el) setValue("settingsOpen", false);
+  });
+
   defineFn("applyTemplate", (el) => {
     const id = el.value;
     if (!id) return;
@@ -494,6 +505,12 @@ function registerPersistence() {
 function wireHashRouting() {
   window.addEventListener("hashchange", () => {
     setValue("view", deriveViewFromHash());
+  });
+}
+
+function wireGlobalKeys() {
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setValue("settingsOpen", false);
   });
 }
 
