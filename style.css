@@ -1299,6 +1299,38 @@ details[open] summary {
   flex: 0 0 auto;
 }
 
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-footer .social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-bottom: none;
+  padding: 0;
+  color: var(--muted);
+  transition: color 0.12s ease, background 0.12s ease, transform 0.06s ease;
+}
+
+.site-footer .social-link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.site-footer .social-link:active {
+  transform: translateY(1px);
+}
+
+.site-footer .social-link svg {
+  display: block;
+}
+
 /* ---------- Print (Save as PDF) ---------- */
 @media print {
   @page {
