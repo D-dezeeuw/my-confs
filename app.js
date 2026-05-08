@@ -271,10 +271,16 @@ const STORAGE = {
   demoMode: "dw26.demoMode",
 };
 
-// Demo mode freezes the clock at this minute-of-day so the live timeline
-// has a sensible "now" to centre on. The conference is over, but with
-// demo mode on the app still demos cleanly.
-const DEMO_TIME_MINUTES = 14 * 60 + 15; // 14:15
+// Demo mode rebases the clock onto a fictive day. On every page load
+// (and on each toggle-on), demo time starts at DEMO_START_MINUTES and
+// progresses forward 1:1 with real time. So a refresh always re-anchors
+// demo time at 14:24, then it ticks normally.
+const DEMO_START_MINUTES = 14 * 60 + 24; // 14:24
+
+// Real-clock millisecond timestamp at the moment the demo clock was
+// anchored. Set once at module load and re-anchored when the user
+// toggles demo mode on.
+let demoLoadTs = Date.now();
 
 // Reminder fires this many minutes before a recommended session start.
 const NOTIFY_LEAD_MIN = 5;
@@ -420,7 +426,10 @@ function deriveViewFromHash() {
 }
 
 function currentMinutes() {
-  if (isDemoModeOn()) return DEMO_TIME_MINUTES;
+  if (isDemoModeOn()) {
+    const elapsedMin = Math.floor((Date.now() - demoLoadTs) / 60_000);
+    return DEMO_START_MINUTES + Math.max(0, elapsedMin);
+  }
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
 }
@@ -949,6 +958,16 @@ function registerHandlers() {
     // Persist first so currentMinutes() reads the new value before the
     // setValues below evaluate it.
     localStorage.setItem(STORAGE.demoMode, next ? "1" : "0");
+    if (next) {
+      // Re-anchor the rebased clock so the toggle-on always restarts at
+      // DEMO_START_MINUTES (matching the refresh semantics).
+      demoLoadTs = Date.now();
+      // Reset notified ids — picks are about to "happen" at different
+      // real times, so previous stale-marks from the real-clock run are
+      // misleading. Fresh notify slate.
+      setValue("notifiedIds", []);
+      localStorage.removeItem(STORAGE.notifiedIds);
+    }
     setValue("demoMode", next);
     setValue("timelineNow", currentMinutes());
   });
@@ -1140,8 +1159,8 @@ function wireGlobalKeys() {
 
 function wireClock() {
   setInterval(() => {
-    // Demo mode freezes the clock — no per-minute writes needed.
-    if (isDemoModeOn()) return;
+    // currentMinutes() returns the rebased value when demo mode is on,
+    // so a single setValue keeps both modes ticking forward 1:1.
     setValue("timelineNow", currentMinutes());
   }, 60_000);
 }
@@ -1178,10 +1197,6 @@ function wireNotifications() {
 
 function pollNotifications() {
   if (!("Notification" in window)) return;
-  // Demo mode freezes the clock; firing real-time reminders against a
-  // fictive "now" would only confuse. The Test button still fires
-  // immediately for permission verification.
-  if (isDemoModeOn()) return;
   // Read live state (delta-merged) so we see the most recent notifyEnabled
   // and notifiedIds without waiting for another tick.
   const enabled = getLiveValue("notifyEnabled");
@@ -1198,7 +1213,7 @@ function pollNotifications() {
 
   for (const pick of items) {
     if (notified.has(pick.id)) continue;
-    const startMs = todayAtMs(pick.time);
+    const startMs = pickStartMs(pick.time);
     if (startMs == null) {
       // No published time (e.g. opening Duck stage talks) — silent skip.
       notified.add(pick.id);
@@ -1275,6 +1290,22 @@ function todayAtMs(hhmm) {
   const d = new Date();
   d.setHours(h, m, 0, 0);
   return d.getTime();
+}
+
+// Map a session's published HH:MM to a real-clock timestamp at which
+// the session starts. In real mode that's just today at HH:MM. In demo
+// mode it's offset from demoLoadTs so a session at 14:30 fires at
+// (14:30 - 14:24) = 6 real minutes after the page loaded — keeping
+// notifications coherent with the rebased demo clock.
+function pickStartMs(hhmm) {
+  if (!hhmm || typeof hhmm !== "string") return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  if (isDemoModeOn()) {
+    const startMin = h * 60 + m;
+    return demoLoadTs + (startMin - DEMO_START_MINUTES) * 60_000;
+  }
+  return todayAtMs(hhmm);
 }
 
 function faviconUrl() {

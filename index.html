@@ -28,7 +28,7 @@
       aria-label="Demo mode is active. Click for an explanation."
     >
       <span class="demo-pill-icon" aria-hidden="true">⚠</span>
-      <span class="demo-pill-label">Demo mode · 14:15 fictive time</span>
+      <span class="demo-pill-label">Demo mode · {{nowLabel}}</span>
     </button>
 
     <header class="topbar">
@@ -486,26 +486,28 @@
         <div class="modal-body demo-body">
           <p>
             DevWorld 2026 is over. To keep the app demo-able, the clock is
-            <strong>frozen at 14:15</strong> — so the live timeline always has a
-            sensible "now" to centre on, and recommendations / agenda views
-            still feel populated.
+            rebased onto a fictive day: <strong>each refresh starts at 14:24</strong>
+            and from there it ticks forward 1:1 with real time.
           </p>
           <p>
-            What demo mode changes:
+            What demo mode does:
           </p>
           <ul class="demo-list">
             <li>
-              <strong>Live timeline</strong> shows the now-line at 14:15 and
-              auto-scrolls there on entry.
+              <strong>Live timeline</strong> centres the now-line at 14:24 on
+              load and scrolls forward as the demo clock ticks.
             </li>
             <li>
-              <strong>Notifications</strong> are paused — real-time reminders
-              against a fictive clock would only confuse. The
-              <em>Test</em> button still works to verify permission.
+              <strong>Notifications</strong> stay enabled and fire 5 minutes
+              before each pick's <em>demo</em> start time — so a 14:30 pick
+              triggers ~1 real minute after the page loads.
             </li>
             <li>
               Everything else (recommendations, agenda, filters, exports)
               works as normal.
+            </li>
+            <li>
+              Refresh the page → demo time resets to 14:24.
             </li>
           </ul>
           <p class="muted small">
@@ -674,8 +676,9 @@
             <div>
               <strong>Demo mode</strong>
               <p class="muted small">
-                Freeze the clock at 14:15 so the live timeline + agenda
-                stay demo-able after the conference. Notifications pause.
+                Rebase the clock to 14:24 on each refresh, then tick
+                forward 1:1 with real time. Keeps the live timeline +
+                notifications demo-able after the conference.
               </p>
             </div>
             <button
