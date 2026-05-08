@@ -905,24 +905,24 @@ function registerHandlers() {
       setValue("settingsOpen", true);
       return;
     }
-    // Honour the "Hide likely pitches" toggle for the LLM call too — if it's
-    // on, we drop pitch-risk sessions from the agenda payload so the model
-    // never even considers them as picks or alternatives.
+    // Always send the full agenda. We previously dropped pitch-risk
+    // sessions from the payload when hidePitches was on, but that produced
+    // gaps in slots whose every entry was a pitch (the LLM had nothing to
+    // pick). Instead we pass the preference through and tell the model to
+    // avoid pitches *unless* the whole slot is pitches, in which case it
+    // should pick the best one anyway and surface the trade-off.
     const allSessions = live.sessions || [];
-    const sessionsForLlm = live.hidePitches
-      ? allSessions.filter((s) => s.pitchRisk !== "pitch")
-      : allSessions;
-    const droppedForPitch = allSessions.length - sessionsForLlm.length;
 
     setValue("loading", true);
-    setValue("status", {
-      text: droppedForPitch
-        ? `Thinking… (${droppedForPitch} likely pitches excluded)`
-        : "Thinking…",
-      kind: "muted",
-    });
+    setValue("status", { text: "Thinking…", kind: "muted" });
     try {
-      const recs = await callOpenRouter(ctx, sessionsForLlm, apiKey, live.model);
+      const recs = await callOpenRouter(
+        ctx,
+        allSessions,
+        apiKey,
+        live.model,
+        !!live.hidePitches
+      );
       const map = recsToMap(recs);
       setValue("rawRecs", map);
       setValue("overallAdvice", recs.overall_advice || "");
@@ -1193,7 +1193,7 @@ function wireTimelineAutoScroll() {
 
 // ---------- OpenRouter call --------------------------------------------
 
-async function callOpenRouter(context, sessions, apiKey, model) {
+async function callOpenRouter(context, sessions, apiKey, model, hidePitches) {
   // Trim payload — full descriptions inflate tokens for marginal lift.
   const compact = sessions.map((s) => ({
     title: s.title,
@@ -1228,6 +1228,12 @@ Rules:
   4-6 is a soft signal, not disqualifying — many vendor-adjacent talks are technically deep. Surface the
   conflict in the rationale when relevant ("vendor talk — speaker is from <Company>, which sells
   <product>"). The pitchReason field already names the company and product when one is on file.
+- The user's "Hide pitches" preference is passed in via hidePitches. When true: prefer sessions with
+  pitchScore < 7 as picks. **However, never leave a slot without a pick.** If every session in a slot
+  has pitchScore ≥ 7, pick the least pitch-y one anyway and clearly call out the compromise in the
+  rationale ("Every session in this slot is vendor-led — picked the most technically substantive of
+  them"). Same rule for alternatives: it is fine to surface a pitch as an alternative if the slot is
+  thin on options.
 - Skip slots only if every session at that slot is clearly irrelevant.
 - Keep rationales tight: one or two sentences each.
 
@@ -1247,6 +1253,12 @@ Return STRICT JSON only, no markdown, matching this shape:
 
   const userMessage = `Professional context:
 ${context}
+
+Hide pitches preference: ${
+    hidePitches
+      ? "ON — strongly avoid sessions with pitchScore >= 7. Only fall back to a pitch if every session in a slot is a pitch, and call out the compromise in the rationale. Never leave a slot without a pick."
+      : "OFF — apply the default pitchScore guidance from the system prompt without an extra penalty."
+  }
 
 Agenda (${compact.length} sessions):
 ${JSON.stringify(compact)}`;
