@@ -19,6 +19,12 @@
    * The time axis ticks and the now-line bake this offset in via calc()
    * so they line up with the lanes (which start after this column). */
   --stage-col-width: 88px;
+  /* Approximate height of the fixed footer, used by every view + the FAB
+   * + the loading bar to leave room above. Footer wraps gracefully on
+   * very narrow viewports — this reserves enough space for the common
+   * single-line layout. */
+  --footer-h: 60px;
+  --bottom-clearance: calc(var(--footer-h) + var(--safe-bottom));
 }
 
 @media (min-width: 700px) {
@@ -121,7 +127,7 @@ h3 {
   grid-template-columns: 1fr;
   gap: 14px;
   padding: 14px;
-  padding-bottom: calc(96px + var(--safe-bottom));
+  padding-bottom: calc(96px + var(--bottom-clearance));
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -248,7 +254,7 @@ button.primary:disabled {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--bottom-clearance);
   height: 3px;
   z-index: 40;
   pointer-events: none;
@@ -715,7 +721,7 @@ details[open] summary {
   position: fixed;
   left: 50%;
   right: auto;
-  bottom: calc(16px + var(--safe-bottom));
+  bottom: calc(12px + var(--bottom-clearance));
   z-index: 30;
   background: var(--accent);
   color: white;
@@ -745,14 +751,6 @@ details[open] summary {
   --fab-y: 0;
 }
 
-/* Fade out the FAB once the footer scrolls into view so it doesn't
- * sit on top of the credits + social icons. Class toggled by an
- * IntersectionObserver in app.js. */
-body.footer-visible .fab {
-  opacity: 0;
-  pointer-events: none;
-  --fab-y: 20px;
-}
 
 /* ---------- Agenda view ---------- */
 
@@ -760,7 +758,7 @@ body.footer-visible .fab {
   max-width: 720px;
   margin: 0 auto;
   padding: 14px;
-  padding-bottom: calc(40px + var(--safe-bottom));
+  padding-bottom: calc(24px + var(--bottom-clearance));
 }
 
 .agenda-header {
@@ -1001,7 +999,7 @@ body.footer-visible .fab {
   }
 
   .fab {
-    bottom: 24px;
+    bottom: calc(20px + var(--bottom-clearance));
     min-width: 180px;
   }
 
@@ -1108,7 +1106,7 @@ body.footer-visible .fab {
 
 .live {
   padding: 14px;
-  padding-bottom: calc(40px + var(--safe-bottom));
+  padding-bottom: calc(24px + var(--bottom-clearance));
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -1370,15 +1368,20 @@ body.footer-visible .fab {
 /* ---------- Footer ---------- */
 
 .site-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
   border-top: 1px solid var(--border);
   background: var(--surface);
   font-size: 0.82rem;
   color: var(--muted);
-  padding: 16px 18px calc(16px + var(--safe-bottom));
+  padding: 10px 18px calc(10px + var(--safe-bottom));
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 6px 16px;
   justify-content: space-between;
   align-items: center;
 }
