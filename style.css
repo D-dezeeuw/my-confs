@@ -1256,6 +1256,48 @@ details[open] summary {
   }
 }
 
+/* ---------- Footer ---------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  padding: 20px 16px calc(20px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 1px dotted var(--muted);
+  padding-bottom: 1px;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.spektrum-mark {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
 /* ---------- Print (Save as PDF) ---------- */
 @media print {
   @page {
@@ -1275,7 +1317,9 @@ details[open] summary {
   .layout,
   .agenda-empty,
   .agenda-header,
-  .agenda-export {
+  .agenda-export,
+  .notify-banner,
+  .site-footer {
     display: none !important;
   }
 
