@@ -238,6 +238,75 @@ button.primary:disabled {
   }
 }
 
+/* ---------- Page-wide loading bar (fake progress) ----------
+ * Fixed bottom strip, fills 0% → 95% with an ease-out curve so it feels
+ * snappy at first then asymptotes — we don't know when the LLM will
+ * actually return, so we never claim 100% mid-load. A second animation
+ * scrolls the gradient continuously for the "alive, working" feel. */
+
+.loading-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.loading-bar::before {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    var(--pick),
+    var(--alt),
+    var(--danger),
+    var(--accent)
+  );
+  background-size: 200% 100%;
+  animation:
+    dw-fake-progress 14s cubic-bezier(0.1, 0.6, 0.3, 1) forwards,
+    dw-gradient-shimmer 1.4s linear infinite;
+  box-shadow: 0 0 14px rgba(124, 92, 255, 0.55),
+    0 0 6px rgba(45, 212, 191, 0.3);
+}
+
+@keyframes dw-fake-progress {
+  0% {
+    width: 0%;
+  }
+  18% {
+    width: 36%;
+  }
+  55% {
+    width: 74%;
+  }
+  100% {
+    width: 95%;
+  }
+}
+
+@keyframes dw-gradient-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: -200% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar::before {
+    animation: dw-fake-progress 14s linear forwards;
+  }
+}
+
 button.ghost {
   background: transparent;
 }

@@ -30,7 +30,11 @@ const CONFETTI_COLORS = ["#7c5cff", "#2dd4bf", "#f59e0b", "#ef4444", "#fcd58e"];
 
 function fireConfetti(kind, originEl) {
   if (typeof confetti !== "function") return;
-  const origin = elementOrigin(originEl);
+  // For "burst" the explosion fills the screen, so always anchor at the
+  // viewport centre regardless of the triggering element. "small" stays
+  // element-anchored — it's a contextual flourish, not a celebration.
+  const origin =
+    kind === "burst" ? { x: 0.5, y: 0.5 } : elementOrigin(originEl);
   const opts = {
     colors: CONFETTI_COLORS,
     disableForReducedMotion: true,
@@ -39,16 +43,14 @@ function fireConfetti(kind, originEl) {
   if (kind === "small") {
     confetti({ ...opts, particleCount: 60, spread: 55, startVelocity: 30 });
   } else {
-    // "burst" — for big wins like a fresh recommendation set
-    confetti({ ...opts, particleCount: 200, spread: 90, startVelocity: 45 });
+    confetti({ ...opts, particleCount: 220, spread: 100, startVelocity: 50 });
     // Two-stage spawn for a more cinematic feel.
     setTimeout(() => {
       confetti({
         ...opts,
-        particleCount: 80,
-        spread: 120,
-        startVelocity: 35,
-        origin: { x: origin.x, y: Math.max(0, origin.y - 0.05) },
+        particleCount: 90,
+        spread: 130,
+        startVelocity: 40,
       });
     }, 180);
   }
