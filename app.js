@@ -13,6 +13,7 @@ import {
   computed,
   addSystem,
   getPathObj,
+  refs,
 } from "spektrum";
 
 // ---------- vendor / pitch detection -----------------------------------
@@ -208,6 +209,7 @@ const STORAGE = {
   tagFilters: "dw26.tagFilters",
   stageFilters: "dw26.stageFilters",
   hidePitches: "dw26.hidePitches",
+  timelineMode: "dw26.timelineMode",
   rawRecs: "dw26.rawRecs",
   overallAdvice: "dw26.overallAdvice",
 };
@@ -222,6 +224,8 @@ const STORAGE = {
   registerPersistence();
   wireHashRouting();
   wireGlobalKeys();
+  wireClock();
+  wireTimelineAutoScroll();
   await loadCompanies();
   await loadSessions();
   if (keyFromUrl) {
@@ -292,10 +296,27 @@ function initialState() {
     safeJson(localStorage.getItem(STORAGE.rawRecs), null)
   );
   setValue("view", deriveViewFromHash());
+  setValue(
+    "timelineMode",
+    localStorage.getItem(STORAGE.timelineMode) || "picks"
+  );
+  setValue("timelineNow", currentMinutes());
+  setValue("tracks", []);
+  setValue("timeAxis", []);
+  setValue("nowOffset", null);
+  setValue("timelineWidth", 0);
 }
 
 function deriveViewFromHash() {
-  return window.location.hash === "#agenda" ? "agenda" : "schedule";
+  const h = window.location.hash;
+  if (h === "#agenda") return "agenda";
+  if (h === "#live") return "live";
+  return "schedule";
+}
+
+function currentMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
 }
 
 function safeJson(s, fallback) {
@@ -466,6 +487,165 @@ function registerComputeds() {
     }
   );
 
+  // ---- Live timeline ----
+  // Tunables.
+  const PX_PER_MINUTE = 5;
+  const TIMELINE_PAD_BEFORE = 30;   // minutes shown before the earliest session
+  const TIMELINE_PAD_AFTER = 30;    // minutes shown after the latest end
+  const STAGE_ORDER = [
+    "Main Stage",
+    "Duck Stage 1",
+    "Duck Stage 2",
+    "Duck Stage 3",
+    "Workshop Area",
+    "All Tracks",
+  ];
+
+  const stageRank = (s) => {
+    const i = STAGE_ORDER.indexOf(s);
+    return i === -1 ? 100 : i;
+  };
+
+  const sessionStartMinutes = (s) => {
+    // Three opening Duck Stage talks have no published time; treat as 09:00
+    // for timeline purposes only (their original .time stays null).
+    const t = s.time || "09:00";
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const sessionEndMinutes = (s) => sessionStartMinutes(s) + parseDuration(s.duration);
+
+  computed(
+    "tracks",
+    ["sessions", "rawRecs", "timelineMode", "hasRecommendations"],
+    (state) => {
+      const sessions = state.sessions || [];
+      if (sessions.length === 0) return [];
+
+      const recs = state.rawRecs;
+      const mode = state.hasRecommendations ? state.timelineMode : "all";
+
+      // Compute timeline range for px-positioning.
+      let minStart = Infinity;
+      let maxEnd = 0;
+      for (const s of sessions) {
+        const start = sessionStartMinutes(s);
+        const end = sessionEndMinutes(s);
+        if (start < minStart) minStart = start;
+        if (end > maxEnd) maxEnd = end;
+      }
+      const origin = (Number.isFinite(minStart) ? minStart : 540) - TIMELINE_PAD_BEFORE;
+
+      // Build per-stage map.
+      const map = new Map();
+      for (const s of sessions) {
+        const stage = s.stage || "Other";
+        if (!map.has(stage)) map.set(stage, []);
+        const start = sessionStartMinutes(s);
+        const dur = parseDuration(s.duration);
+        const r = recs ? recs[normalize(s.title)] : null;
+        const recKind = r?.kind || "";
+
+        if (mode === "picks" && recKind !== "pick") continue;
+
+        const left = (start - origin) * PX_PER_MINUTE;
+        const width = Math.max(60, dur * PX_PER_MINUTE);
+        map.get(stage).push({
+          ...s,
+          recKind,
+          recRationale: r?.rationale || "",
+          timelineStyle: `left: ${left}px; width: ${width}px;`,
+        });
+      }
+
+      const tracks = [...map.entries()]
+        .filter(([, items]) => items.length > 0)
+        .sort(([a], [b]) => stageRank(a) - stageRank(b))
+        .map(([stage, items]) => ({
+          stage,
+          sessions: items.sort((a, b) => sessionStartMinutes(a) - sessionStartMinutes(b)),
+        }));
+      return tracks;
+    }
+  );
+
+  computed("timeAxis", ["sessions"], (state) => {
+    const sessions = state.sessions || [];
+    if (sessions.length === 0) return [];
+    let minStart = Infinity;
+    let maxEnd = 0;
+    for (const s of sessions) {
+      const start = sessionStartMinutes(s);
+      const end = sessionEndMinutes(s);
+      if (start < minStart) minStart = start;
+      if (end > maxEnd) maxEnd = end;
+    }
+    if (!Number.isFinite(minStart)) return [];
+    const origin = minStart - TIMELINE_PAD_BEFORE;
+    const last = maxEnd + TIMELINE_PAD_AFTER;
+    // Round origin down to nearest :00 / :30, end up similarly.
+    const startMin = Math.floor(origin / 30) * 30;
+    const endMin = Math.ceil(last / 30) * 30;
+    const ticks = [];
+    for (let m = startMin; m <= endMin; m += 30) {
+      const h = Math.floor(m / 60) % 24;
+      const mm = m % 60;
+      const label = `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+      ticks.push({
+        label,
+        style: `left: ${(m - origin) * PX_PER_MINUTE}px;`,
+        major: mm === 0,
+      });
+    }
+    return ticks;
+  });
+
+  computed("timelineWidth", ["sessions"], (state) => {
+    const sessions = state.sessions || [];
+    if (sessions.length === 0) return 0;
+    let minStart = Infinity;
+    let maxEnd = 0;
+    for (const s of sessions) {
+      const start = sessionStartMinutes(s);
+      const end = sessionEndMinutes(s);
+      if (start < minStart) minStart = start;
+      if (end > maxEnd) maxEnd = end;
+    }
+    if (!Number.isFinite(minStart)) return 0;
+    return (maxEnd + TIMELINE_PAD_AFTER - (minStart - TIMELINE_PAD_BEFORE)) * PX_PER_MINUTE;
+  });
+
+  computed("nowOffset", ["sessions", "timelineNow"], (state) => {
+    const sessions = state.sessions || [];
+    if (sessions.length === 0) return null;
+    let minStart = Infinity;
+    let maxEnd = 0;
+    for (const s of sessions) {
+      const start = sessionStartMinutes(s);
+      const end = sessionEndMinutes(s);
+      if (start < minStart) minStart = start;
+      if (end > maxEnd) maxEnd = end;
+    }
+    if (!Number.isFinite(minStart)) return null;
+    const origin = minStart - TIMELINE_PAD_BEFORE;
+    const now = state.timelineNow ?? 0;
+    if (now < origin || now > maxEnd + TIMELINE_PAD_AFTER) return null;
+    return (now - origin) * PX_PER_MINUTE;
+  });
+
+  computed("nowLabel", ["timelineNow"], (state) => {
+    const m = state.timelineNow ?? 0;
+    const h = Math.floor(m / 60) % 24;
+    const mm = m % 60;
+    return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  });
+
+  computed("nowStyle", ["nowOffset"], (state) => {
+    const o = state.nowOffset;
+    return o == null ? "display: none;" : `left: ${o}px;`;
+  });
+
   // hasRecommendations boolean for the Strategy card + Clear button.
   computed("hasRecommendations", ["rawRecs"], (state) => {
     const r = state.rawRecs;
@@ -592,6 +772,20 @@ function registerHandlers() {
       window.location.hash = "#schedule";
     }
     window.scrollTo({ top: 0, behavior: "auto" });
+  });
+
+  defineFn("goLive", () => {
+    setValue("view", "live");
+    if (window.location.hash !== "#live") {
+      window.location.hash = "#live";
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  });
+
+  defineFn("toggleTimelineMode", (_el, state) => {
+    const next = state.timelineMode === "picks" ? "all" : "picks";
+    setValue("timelineMode", next);
+    localStorage.setItem(STORAGE.timelineMode, next);
   });
 
   defineFn("recommend", async (_el, state, delta) => {
@@ -724,6 +918,28 @@ function wireHashRouting() {
 function wireGlobalKeys() {
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") setValue("settingsOpen", false);
+  });
+}
+
+function wireClock() {
+  setInterval(() => setValue("timelineNow", currentMinutes()), 60_000);
+}
+
+// Keep the now-line visible inside the horizontally-scrolling timeline.
+// Re-runs whenever the live view becomes active or `nowOffset` updates.
+function wireTimelineAutoScroll() {
+  let lastApplied = -1;
+  addSystem(["view", "nowOffset"], (state) => {
+    if (state.view !== "live") return;
+    const offset = state.nowOffset;
+    if (offset == null) return;
+    if (offset === lastApplied) return;
+    const el = refs.timelineScroll;
+    if (!el) return;
+    // Place the now-line ~28% from the left edge of the visible area.
+    const target = Math.max(0, offset - el.clientWidth * 0.28);
+    el.scrollTo({ left: target, behavior: "smooth" });
+    lastApplied = offset;
   });
 }
 

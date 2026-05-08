@@ -20,7 +20,17 @@
         <h1>DevWorld 2026</h1>
         <span class="tag">Personalized schedule recommender</span>
       </div>
-      <button class="ghost" data-action="click" data-fn="toggleSettings">Settings</button>
+      <div class="topbar-actions">
+        <button
+          class="ghost topbar-live"
+          data-if="view !== 'live'"
+          data-action="click"
+          data-fn="goLive"
+        >
+          ● Live
+        </button>
+        <button class="ghost" data-action="click" data-fn="toggleSettings">Settings</button>
+      </div>
     </header>
 
     <div class="layout" data-if="view === 'schedule'">
@@ -251,6 +261,78 @@
           </article>
         </li>
       </ol>
+    </section>
+
+    <section class="live" data-if="view === 'live'">
+      <header class="live-header">
+        <button class="ghost back" data-action="click" data-fn="goSchedule">← Schedule</button>
+        <div class="live-title">
+          <h2>Live now</h2>
+          <span class="muted">{{nowLabel}}</span>
+        </div>
+        <button
+          class="ghost live-mode-toggle"
+          data-if="hasRecommendations"
+          data-action="click"
+          data-fn="toggleTimelineMode"
+          :class="{active: timelineMode === 'picks'}"
+          :title="timelineMode === 'picks' ? 'Showing only your recommended picks' : 'Showing every session across tracks'"
+        >
+          {{timelineMode === 'picks' ? 'My picks' : 'All sessions'}}
+        </button>
+      </header>
+
+      <div class="timeline-scroll" data-ref="timelineScroll">
+        <div class="timeline" :style="'width: ' + timelineWidth + 'px;'">
+          <div
+            class="timeline-axis"
+            data-each="timeAxis"
+            data-as="tk"
+            data-key="tk.label"
+          >
+            <span
+              class="timeline-tick"
+              :class="{major: tk.major}"
+              :style="tk.style"
+              >{{tk.label}}</span
+            >
+          </div>
+          <div
+            class="timeline-tracks"
+            data-each="tracks"
+            data-as="trk"
+            data-key="trk.stage"
+          >
+            <div class="timeline-row">
+              <div class="timeline-stage">{{trk.stage}}</div>
+              <div
+                class="timeline-lane"
+                data-each="trk.sessions"
+                data-as="blk"
+                data-key="blk.id"
+              >
+                <article
+                  class="timeline-block"
+                  :class="{pick: blk.recKind === 'pick', alt: blk.recKind === 'alt', pitch: blk.pitchRisk === 'pitch'}"
+                  :style="blk.timelineStyle"
+                  :title="blk.title"
+                >
+                  <span class="timeline-block-time">{{blk.timeLabel}}</span>
+                  <span class="timeline-block-title">{{blk.title}}</span>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-now" :style="nowStyle">
+            <span class="timeline-now-label">now</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="live-empty muted" data-if="tracks.length === 0">
+        Nothing to show here. Switch the toggle to <strong>All sessions</strong>
+        or generate recommendations on the schedule first.
+      </p>
     </section>
 
     <button
