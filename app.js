@@ -17,78 +17,121 @@ import {
 
 // ---------- vendor / pitch detection -----------------------------------
 //
-// Curated list of companies whose employees often present product-led
-// content. Match is on lowercase substring of the speaker's worksFor
-// field, so "Auth0" matches "Auth0", "Auth0 / Okta", etc. Add or remove
-// entries here to tune. Non-vendor companies (BigCo internal case studies,
-// universities, foundations) are deliberately absent — speakers from those
-// orgs can still be product-pitch-y if their talk literally markets the
-// product, but we treat them as `neutral` by default.
+// Each speaker company is scored 0-10 in data/companies.json. The session's
+// pitchScore is the max across its speakers, +2 if the company name is
+// referenced in the title or description (clamped to 10). Score is bucketed
+// for display:
+//   ≥7  → "Likely pitch" (amber, hidden by Hide-pitches filter)
+//   ≥4  → "Vendor talk"  (grey)
+//   else→ neutral (no badge)
+//
+// Soft signal: a DevRel/Advocate/Evangelist job title bumps the score by 1
+// even when the company is unscored, so generic outreach roles still flag.
 
-const VENDOR_COMPANIES = [
-  "apify",
-  "auth0",
-  "aerospike",
-  "cerbos",
-  "cloudflare",
-  "cloudsmith",
-  "crab nebula",
-  "datadog",
-  "directus",
-  "dynatrace",
-  "gitbook",
-  "gitlab",
-  "harness",
-  "neo4j",
-  "novium",
-  "oracle",
-  "sentry",
-  "solace",
-  "sonar",
-  "storyblok",
-  "tailscale",
-  "tauri",
-  "tryhackme",
-];
+let companiesIndex = {}; // populated by loadCompanies()
 
 const PITCH_JOB_TITLES = /devrel|developer\s+advocate|evangelist|gtm|sales/i;
 
+async function loadCompanies() {
+  try {
+    const resp = await fetch("./data/companies.json");
+    if (!resp.ok) return;
+    const json = await resp.json();
+    companiesIndex = json.companies || {};
+  } catch {
+    /* fall through — empty index keeps everything neutral */
+  }
+}
+
+function lookupCompany(name) {
+  if (!name) return null;
+  const direct = companiesIndex[name];
+  if (direct) return direct;
+  // Fallback: case-insensitive lookup (handles minor casing drift in source).
+  const lower = name.toLowerCase();
+  for (const [k, v] of Object.entries(companiesIndex)) {
+    if (k.toLowerCase() === lower) return v;
+  }
+  return null;
+}
+
 function classifyPitchRisk(session) {
   const speakerInfos = session.speakerInfo || [];
-  if (speakerInfos.length === 0) return { risk: "neutral", reason: "" };
+  if (speakerInfos.length === 0) {
+    return { risk: "neutral", score: 0, reason: "" };
+  }
 
   const haystack = `${session.title || ""} ${session.description || ""}`.toLowerCase();
 
+  let bestScore = 0;
+  let bestCompany = "";
+  let bestProducts = "";
+  let bumpReason = "";
+
   for (const info of speakerInfos) {
     const company = (info.company || "").trim();
-    if (!company) continue;
-    const companyLower = company.toLowerCase();
-    // Tier 1: company name explicitly appears in the talk title or description.
-    if (companyLower && haystack.includes(companyLower)) {
-      return {
-        risk: "pitch",
-        reason: `Speaker is from ${company} and the talk mentions ${company}.`,
-      };
+    let score = 0;
+    let products = "";
+    if (company) {
+      const entry = lookupCompany(company);
+      if (entry) {
+        score = entry.pitchScore || 0;
+        products = entry.products || "";
+      }
+      // Bump if the company name is referenced in title/description.
+      if (haystack.includes(company.toLowerCase())) {
+        score = Math.min(10, score + 2);
+        bumpReason = ` (talk references ${company})`;
+      }
     }
-  }
-
-  for (const info of speakerInfos) {
-    const company = (info.company || "").toLowerCase();
-    if (VENDOR_COMPANIES.some((v) => company.includes(v))) {
-      return {
-        risk: "vendor",
-        reason: `Speaker is from ${info.company} (vendor company).`,
-      };
-    }
+    // Soft bump for outreach job titles, even without a company score.
     if (PITCH_JOB_TITLES.test(info.jobTitle || "")) {
-      return {
-        risk: "vendor",
-        reason: `Speaker job title (${info.jobTitle}) is a product-outreach role.`,
-      };
+      score = Math.max(score, 6);
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestCompany = company;
+      bestProducts = products;
     }
   }
 
-  return { risk: "neutral", reason: "" };
+  // Fallback: when no speaker resolved to a worksFor (or speaker info is
+  // empty), still scan the title + description for any known vendor-company
+  // name in the index. Catches talks like "Agents at Work: How GitLab Is
+  // Redefining AI Adoption" where the speaker didn't match but the brand is
+  // explicit. Skip if a real speaker company already produced a higher
+  // signal.
+  if (bestScore < 7) {
+    for (const [name, entry] of Object.entries(companiesIndex)) {
+      if (!entry || (entry.pitchScore || 0) < 6) continue;
+      const lower = name.toLowerCase();
+      if (lower.length < 3) continue; // avoid spurious 2-letter hits
+      if (haystack.includes(lower)) {
+        const score = Math.min(10, (entry.pitchScore || 0) + 2);
+        if (score > bestScore) {
+          bestScore = score;
+          bestCompany = name;
+          bestProducts = entry.products || "";
+          bumpReason = " (talk references the company)";
+        }
+      }
+    }
+  }
+
+  let risk = "neutral";
+  let reason = "";
+  if (bestScore >= 7) {
+    risk = "pitch";
+    reason = bestCompany
+      ? `Speaker from ${bestCompany}${bestProducts ? " — " + bestProducts : ""}${bumpReason}.`
+      : "Likely product pitch.";
+  } else if (bestScore >= 4) {
+    risk = "vendor";
+    reason = bestCompany
+      ? `Speaker from ${bestCompany}${bestProducts ? " — " + bestProducts : ""}.`
+      : "Vendor or outreach role.";
+  }
+  return { risk, score: bestScore, reason };
 }
 
 // ---------- role templates ---------------------------------------------
@@ -179,6 +222,7 @@ const STORAGE = {
   registerPersistence();
   wireHashRouting();
   wireGlobalKeys();
+  await loadCompanies();
   await loadSessions();
   if (keyFromUrl) {
     setValue("status", {
@@ -313,7 +357,11 @@ function enrichSession(s, idx) {
   if (end && s.time) metaBits.push(`${s.time}–${end}`);
   if (speakerLabel) metaBits.push(speakerLabel);
 
-  const { risk: pitchRisk, reason: pitchReason } = classifyPitchRisk(s);
+  const {
+    risk: pitchRisk,
+    reason: pitchReason,
+    score: pitchScore,
+  } = classifyPitchRisk(s);
   const pitchLabel =
     pitchRisk === "pitch"
       ? "Likely pitch"
@@ -341,6 +389,7 @@ function enrichSession(s, idx) {
     pitchRisk,
     pitchLabel,
     pitchReason,
+    pitchScore,
   };
 }
 
@@ -564,10 +613,24 @@ function registerHandlers() {
       setValue("settingsOpen", true);
       return;
     }
+    // Honour the "Hide likely pitches" toggle for the LLM call too — if it's
+    // on, we drop pitch-risk sessions from the agenda payload so the model
+    // never even considers them as picks or alternatives.
+    const allSessions = live.sessions || [];
+    const sessionsForLlm = live.hidePitches
+      ? allSessions.filter((s) => s.pitchRisk !== "pitch")
+      : allSessions;
+    const droppedForPitch = allSessions.length - sessionsForLlm.length;
+
     setValue("loading", true);
-    setValue("status", { text: "Thinking…", kind: "muted" });
+    setValue("status", {
+      text: droppedForPitch
+        ? `Thinking… (${droppedForPitch} likely pitches excluded)`
+        : "Thinking…",
+      kind: "muted",
+    });
     try {
-      const recs = await callOpenRouter(ctx, live.sessions, apiKey, live.model);
+      const recs = await callOpenRouter(ctx, sessionsForLlm, apiKey, live.model);
       const map = recsToMap(recs);
       setValue("rawRecs", map);
       setValue("overallAdvice", recs.overall_advice || "");
@@ -679,6 +742,7 @@ async function callOpenRouter(context, sessions, apiKey, model) {
       jobTitle: info.jobTitle || null,
     })),
     tags: s.tags,
+    pitchScore: s.pitchScore,
     pitchRisk: s.pitchRisk,
     pitchReason: s.pitchReason || null,
     description: (s.description || "").slice(0, 600),
@@ -693,11 +757,13 @@ Rules:
 - Some sessions span multiple slots (workshops, networking mixers). When you pick one, mention the conflict
   in the rationale so the user knows what they'd be giving up.
 - Prefer hands-on / advanced content over introductory talks unless the user asked otherwise.
-- Each session has a pitchRisk field: "pitch" means the speaker's company is likely being marketed in the
-  talk (vendor sales pitch); "vendor" means the speaker works for a product company or in a developer-
-  outreach role (DevRel/advocate). Treat "pitch" as a strong negative unless the user explicitly asked for
-  product demos. Surface the conflict in the rationale ("vendor talk — speaker is from <Company>"). A
-  "vendor" tag alone is a soft signal, not disqualifying — many vendor talks are technically deep.
+- Each session has a numeric pitchScore (0-10) derived from the speaker's company. 0-3 = neutral / case
+  study / academia / non-profit; 4-6 = consultancy or general SaaS; 7-10 = product company actively
+  marketing a SaaS dev-tool. Score is bumped +2 when the company name appears in the talk title or
+  description. Treat scores ≥7 as a strong negative unless the user explicitly asked for product demos.
+  4-6 is a soft signal, not disqualifying — many vendor-adjacent talks are technically deep. Surface the
+  conflict in the rationale when relevant ("vendor talk — speaker is from <Company>, which sells
+  <product>"). The pitchReason field already names the company and product when one is on file.
 - Skip slots only if every session at that slot is clearly irrelevant.
 - Keep rationales tight: one or two sentences each.
 

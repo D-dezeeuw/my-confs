@@ -1,0 +1,191 @@
+{
+  "_notes": "pitchScore 0-10. Higher = more likely vendor pitch. Hand-curated from LLM training knowledge of each company. Categories: saas-devtool, saas-other, consultancy, bigco-case-study, foundation, academia, agency, conference-org. The 'products' note describes what the company sells; runtime classifier bumps the score when the product is mentioned in the talk title/description.",
+  "_version": 1,
+  "companies": {
+    "Apify": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Web-scraping platform with MCP-driven Agent Skills marketplace"
+    },
+    "GitLab": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "DevOps platform — repos, CI/CD, Duo Agent Platform"
+    },
+    "Gitbook": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Hosted documentation platform with AI features"
+    },
+    "GitHub": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Code hosting + Copilot + Actions; Microsoft-owned"
+    },
+    "Datadog": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Observability + APM + security platform"
+    },
+    "Tailscale": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Mesh VPN built on WireGuard"
+    },
+    "Aerospike": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Real-time NoSQL database vendor"
+    },
+    "Oracle": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Enterprise databases + cloud (OCI)"
+    },
+    "Solace": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Event-streaming + agent mesh platform"
+    },
+    "Tauri": {
+      "pitchScore": 5,
+      "category": "saas-devtool",
+      "products": "Open-source desktop app framework + Crab Nebula commercial offerings"
+    },
+    "Crab Nebula": {
+      "pitchScore": 6,
+      "category": "saas-devtool",
+      "products": "Commercial backers of Tauri; auto-updates, signing services"
+    },
+    "Auth0": {
+      "pitchScore": 9,
+      "category": "saas-devtool",
+      "products": "Identity-as-a-service (Okta-owned); login, JWT, fine-grained authz"
+    },
+    "AUTO1 Group": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "European used-car marketplace; not a B2B dev-tools vendor"
+    },
+    "Booking.com": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "Travel platform; engineering talks are internal case studies"
+    },
+    "Cerbos": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Open-source authorization engine + Cerbos Hub managed service"
+    },
+    "Cloudflare": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "CDN, edge compute (Workers), R2/D1, AI inference, Zero Trust suite"
+    },
+    "Cloudsmith": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Universal package management SaaS (npm, Maven, Docker, etc.)"
+    },
+    "Directus": {
+      "pitchScore": 6,
+      "category": "saas-devtool",
+      "products": "Open-core headless CMS / data platform with Directus Cloud"
+    },
+    "Dynatrace": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "AI-driven observability and APM platform"
+    },
+    "EcoSoft": {
+      "pitchScore": 5,
+      "category": "saas-other",
+      "products": "Sustainability/green-IT software (verify — uncertain)"
+    },
+    "Engaged.lab": {
+      "pitchScore": 3,
+      "category": "consultancy",
+      "products": "Engineering culture / scaling consultancy"
+    },
+    "Harness": {
+      "pitchScore": 9,
+      "category": "saas-devtool",
+      "products": "AI-native CI/CD, feature flags, chaos, FinOps platform; explicitly used as 'reference implementation' in their conference talk"
+    },
+    "Hyper Cursor": {
+      "pitchScore": 6,
+      "category": "saas-other",
+      "products": "AI coding / cursor-adjacent product (verify — uncertain)"
+    },
+    "Luminous": {
+      "pitchScore": 5,
+      "category": "saas-other",
+      "products": "Unknown; default mid (verify)"
+    },
+    "Miro": {
+      "pitchScore": 6,
+      "category": "saas-other",
+      "products": "Collaboration whiteboard SaaS; less dev-tool-focused but product-led"
+    },
+    "Nationale-Nederlanden": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "Dutch insurer; engineering talks are internal case studies"
+    },
+    "Rabobank": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "Dutch cooperative bank; engineering talks are internal case studies"
+    },
+    "Ralabs": {
+      "pitchScore": 3,
+      "category": "consultancy",
+      "products": "Software development consultancy"
+    },
+    "re:cinq": {
+      "pitchScore": 4,
+      "category": "consultancy",
+      "products": "Cloud-native + sustainability consulting"
+    },
+    "Sentry": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "Error monitoring, performance and session replay SaaS"
+    },
+    "Sonar": {
+      "pitchScore": 7,
+      "category": "saas-devtool",
+      "products": "SonarQube / SonarCloud / SonarLint code-quality platform"
+    },
+    "Storyblok": {
+      "pitchScore": 8,
+      "category": "saas-devtool",
+      "products": "Headless CMS with visual editor + recently launched MCP server"
+    },
+    "Tesla": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "EV/automotive; engineering talks are internal case studies"
+    },
+    "The New York Times": {
+      "pitchScore": 1,
+      "category": "bigco-case-study",
+      "products": "Media; engineering talks are internal case studies"
+    },
+    "TomTom": {
+      "pitchScore": 2,
+      "category": "bigco-case-study",
+      "products": "Navigation/maps platform; offers Maps APIs but talks here are case studies"
+    },
+    "TryHackMe": {
+      "pitchScore": 7,
+      "category": "saas-other",
+      "products": "Cybersecurity training & CTF platform"
+    },
+    "adjoe": {
+      "pitchScore": 6,
+      "category": "saas-other",
+      "products": "Mobile ad-tech / app monetization SDK"
+    }
+  }
+}
