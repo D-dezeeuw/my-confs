@@ -316,6 +316,9 @@
                   :class="{pick: blk.recKind === 'pick', alt: blk.recKind === 'alt', pitch: blk.pitchRisk === 'pitch'}"
                   :style="blk.timelineStyle"
                   :title="blk.title"
+                  data-action="click"
+                  data-fn="openSessionDetail"
+                  data-id="blk"
                 >
                   <span class="timeline-block-time">{{blk.timeLabel}}</span>
                   <span class="timeline-block-title">{{blk.title}}</span>
@@ -343,6 +346,102 @@
     >
       Your agenda · {{agendaItems.length}}
     </button>
+
+    <div
+      class="modal-overlay session-detail-overlay"
+      data-if="selectedSession"
+      data-action="click"
+      data-fn="backdropCloseDetail"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-title"
+    >
+      <section class="modal-card session-detail-card">
+        <header class="modal-header">
+          <h2 id="detail-title">Session details</h2>
+          <button
+            class="ghost modal-close"
+            data-action="click"
+            data-fn="closeSessionDetail"
+            aria-label="Close session details"
+          >
+            ×
+          </button>
+        </header>
+        <div class="modal-body session-detail-body">
+          <h3 class="session-detail-title">{{selectedSession.title}}</h3>
+
+          <div class="session-detail-meta">
+            <span data-if="selectedSession.timeLabel">⏱ {{selectedSession.timeLabel}}</span>
+            <span data-if="selectedSession.duration">{{selectedSession.duration}}</span>
+            <span data-if="selectedSession.stage">📍 {{selectedSession.stage}}</span>
+          </div>
+
+          <div
+            class="pitch-flag"
+            data-if="selectedSession.pitchLabel"
+            :class="{'pitch-flag--strong': selectedSession.pitchRisk === 'pitch', 'pitch-flag--soft': selectedSession.pitchRisk === 'vendor'}"
+          >
+            ⚠ {{selectedSession.pitchLabel}}
+          </div>
+          <p class="muted small" data-if="selectedSession.pitchReason">{{selectedSession.pitchReason}}</p>
+
+          <div class="session-detail-section" data-if="selectedSession.recRationale">
+            <h4>Why this was recommended</h4>
+            <div class="rationale">{{selectedSession.recRationale}}</div>
+          </div>
+
+          <div
+            class="session-detail-section"
+            data-if="selectedSession.speakerInfo && selectedSession.speakerInfo.length > 0"
+          >
+            <h4>Speakers</h4>
+            <ul
+              class="speaker-list"
+              data-each="selectedSession.speakerInfo"
+              data-as="spk"
+              data-key="spk.name"
+            >
+              <li class="speaker-row">
+                <div class="speaker-name">{{spk.name}}</div>
+                <div class="speaker-meta muted">
+                  <span data-if="spk.company">{{spk.company}}</span>
+                  <span data-if="spk.jobTitle">· {{spk.jobTitle}}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div
+            class="session-detail-section"
+            data-if="selectedSession.tags && selectedSession.tags.length > 0"
+          >
+            <h4>Tags</h4>
+            <div
+              class="session-tags"
+              data-each="selectedSession.tags"
+              data-as="tg"
+              data-key="tg"
+            >
+              <span class="session-tag">{{tg}}</span>
+            </div>
+          </div>
+
+          <div
+            class="session-detail-section"
+            data-if="selectedSession.description"
+          >
+            <h4>Description</h4>
+            <p class="session-detail-description">{{selectedSession.description}}</p>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button class="primary" data-action="click" data-fn="closeSessionDetail">
+            Close
+          </button>
+        </footer>
+      </section>
+    </div>
 
     <div
       class="modal-overlay"

@@ -849,6 +849,100 @@ details[open] summary {
   }
 }
 
+/* ---------- Session detail modal ---------- */
+
+@media (min-width: 700px) {
+  .session-detail-card {
+    width: min(640px, 100%);
+    max-height: min(85vh, 800px);
+  }
+}
+
+.session-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.session-detail-title {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.session-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.session-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.session-detail-section h4 {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.session-detail-section .rationale {
+  margin: 0;
+}
+
+.session-detail-description {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.speaker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.speaker-row {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.speaker-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.speaker-meta {
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.small {
+  font-size: 0.78rem;
+}
+
 /* ---------- Live timeline view ---------- */
 
 .live {
@@ -1009,7 +1103,15 @@ details[open] summary {
   justify-content: center;
   gap: 1px;
   overflow: hidden;
+  cursor: pointer;
   transition: border-color 0.12s ease, transform 0.06s ease;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.timeline-block:active {
+  transform: scale(0.98);
 }
 
 .timeline-block:hover {

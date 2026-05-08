@@ -305,6 +305,7 @@ function initialState() {
   setValue("timeAxis", []);
   setValue("nowOffset", null);
   setValue("timelineWidth", 0);
+  setValue("selectedSession", null);
 }
 
 function deriveViewFromHash() {
@@ -788,6 +789,22 @@ function registerHandlers() {
     localStorage.setItem(STORAGE.timelineMode, next);
   });
 
+  defineFn("openSessionDetail", (el, state) => {
+    const path = el.dataset.id;
+    if (!path) return;
+    const session = getPathObj(state, path);
+    if (!session) return;
+    setValue("selectedSession", session);
+  });
+
+  defineFn("closeSessionDetail", () => {
+    setValue("selectedSession", null);
+  });
+
+  defineFn("backdropCloseDetail", (el, _state, _delta, _value, ev) => {
+    if (ev && ev.target === el) setValue("selectedSession", null);
+  });
+
   defineFn("recommend", async (_el, state, delta) => {
     const live = { ...state, ...delta };
     const ctx = (live.context || "").trim();
@@ -917,7 +934,10 @@ function wireHashRouting() {
 
 function wireGlobalKeys() {
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") setValue("settingsOpen", false);
+    if (e.key === "Escape") {
+      setValue("settingsOpen", false);
+      setValue("selectedSession", null);
+    }
   });
 }
 
