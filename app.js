@@ -251,6 +251,7 @@ const NOTIFY_POLL_MS = 30_000;
   promptForApiKeyIfMissing();
   bindDOM();
   run();
+  wireFooterFabHide();
 })();
 
 function promptForApiKeyIfMissing() {
@@ -1042,6 +1043,23 @@ function wireGlobalKeys() {
       setValue("selectedSession", null);
     }
   });
+}
+
+// Toggle a body class when the footer scrolls into view, so CSS can fade
+// the FAB out and stop it sitting on top of the credits + social icons.
+function wireFooterFabHide() {
+  if (!("IntersectionObserver" in window)) return;
+  const footer = document.querySelector(".site-footer");
+  if (!footer) return;
+  const obs = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        document.body.classList.toggle("footer-visible", e.isIntersecting);
+      }
+    },
+    { rootMargin: "0px 0px -16px 0px" }
+  );
+  obs.observe(footer);
 }
 
 function wireClock() {

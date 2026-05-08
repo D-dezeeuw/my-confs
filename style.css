@@ -611,24 +611,26 @@ details[open] summary {
 
 .fab {
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(12px + var(--safe-bottom));
+  left: auto;
+  right: 16px;
+  bottom: calc(16px + var(--safe-bottom));
   z-index: 30;
   background: var(--accent);
   color: white;
   border: none;
   border-radius: 999px;
-  padding: 14px 22px;
+  padding: 12px 20px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   letter-spacing: 0.01em;
   box-shadow: 0 12px 30px rgba(124, 92, 255, 0.45),
     0 4px 12px rgba(0, 0, 0, 0.5);
   cursor: pointer;
-  min-height: 52px;
+  min-height: 48px;
   width: auto;
+  max-width: calc(100% - 32px);
   text-align: center;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.12s ease;
 }
 
 .fab:hover {
@@ -638,6 +640,15 @@ details[open] summary {
 
 .fab:active {
   transform: translateY(0);
+}
+
+/* Fade out the FAB once the footer scrolls into view so it doesn't
+ * sit on top of the credits + social icons. Class toggled by an
+ * IntersectionObserver in app.js. */
+body.footer-visible .fab {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
 }
 
 /* ---------- Agenda view ---------- */
