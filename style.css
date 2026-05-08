@@ -328,6 +328,13 @@ button.ghost {
   color: var(--danger);
 }
 
+.btn-hint {
+  margin: 6px 0 0 0;
+  font-size: 0.76rem;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
 /* ---------- Role template picker ---------- */
 
 .template-picker {
