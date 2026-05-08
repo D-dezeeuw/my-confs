@@ -1261,13 +1261,14 @@ details[open] summary {
 .site-footer {
   border-top: 1px solid var(--border);
   background: var(--surface);
-  text-align: center;
   font-size: 0.82rem;
   color: var(--muted);
-  padding: 20px 16px calc(20px + var(--safe-bottom));
+  padding: 16px 18px calc(16px + var(--safe-bottom));
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
   align-items: center;
 }
 
