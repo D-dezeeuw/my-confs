@@ -56,9 +56,37 @@ npm at build time.
 
 The app reads the OpenRouter API key in this order:
 
-1. Whatever the user typed into **Settings → OpenRouter API key** (stored in
+1. `?api=...` (or `?key=...`) on the URL — see "URL-based key" below.
+2. Whatever the user typed into **Settings → OpenRouter API key** (stored in
    `localStorage`, per-browser).
-2. `window.APP_CONFIG.OPENROUTER_API_KEY` from [`config.js`](./config.js).
+3. `window.APP_CONFIG.OPENROUTER_API_KEY` from [`config.js`](./config.js).
+
+### URL-based key
+
+Visit the site with the key in the query string:
+
+```text
+https://d-dezeeuw.github.io/my-confs/?api=sk-or-v1-xxxxxxxx
+```
+
+On boot the app:
+
+1. Reads the `api` (or `key`) param.
+2. Writes it into `localStorage` so subsequent reloads work without the
+   param.
+3. **Immediately strips the param from the URL via `history.replaceState`**
+   — so the key doesn't end up in browser history, bookmarks, or any
+   `Referer` headers when the user clicks an outbound link.
+
+Useful when you've configured the app on your laptop and want to bring it
+up on your phone without manually typing the key, or for a personal
+bookmark that one-shots the setup.
+
+> **Caveats**: query strings still travel through HTTPS encrypted, but the
+> URL appears in: the address bar at the moment of first visit, your local
+> browser history (if your browser caches before strip), screenshots, and
+> any chat/email where you paste the link. Treat the URL like a credential
+> and rotate the key if you share it more broadly than intended.
 
 `config.js` ships with a default key for convenience.
 

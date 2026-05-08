@@ -95,6 +95,7 @@ const STORAGE = {
 // ---------- bootstrap ---------------------------------------------------
 
 (async function main() {
+  const keyFromUrl = consumeApiKeyFromUrl();
   initialState();
   registerHandlers();
   registerComputeds();
@@ -102,9 +103,38 @@ const STORAGE = {
   wireHashRouting();
   wireGlobalKeys();
   await loadSessions();
+  if (keyFromUrl) {
+    setValue("status", {
+      text: "API key loaded from URL and saved to this browser.",
+      kind: "muted",
+    });
+  }
   bindDOM();
   run();
 })();
+
+// Parse `?api=...` (or alias `?key=...`) on boot, persist the value to
+// localStorage, then strip the param from the URL bar via replaceState so
+// the secret doesn't linger in browser history, bookmarks, or referer
+// headers when the user navigates away. Returns true iff a key was consumed
+// so main() can surface a status note after the agenda loads.
+function consumeApiKeyFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("api") ?? params.get("key");
+  if (raw == null) return false;
+  const key = raw.trim();
+  if (!key) return false;
+  localStorage.setItem(STORAGE.apiKey, key);
+  params.delete("api");
+  params.delete("key");
+  const newSearch = params.toString();
+  const newUrl =
+    window.location.pathname +
+    (newSearch ? "?" + newSearch : "") +
+    window.location.hash;
+  history.replaceState(null, "", newUrl);
+  return true;
+}
 
 // ---------- initial state ----------------------------------------------
 
