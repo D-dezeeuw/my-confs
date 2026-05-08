@@ -57,6 +57,17 @@
           </select>
 
           <div class="filter-grid">
+            <div class="chip-row">
+              <button
+                class="chip pitch-toggle"
+                :class="{active: hidePitches}"
+                data-action="click"
+                data-fn="toggleHidePitches"
+                title="Hide sessions where the speaker's company is mentioned in the title or description"
+              >
+                ⚠ Hide likely pitches
+              </button>
+            </div>
             <label>
               Tracks
               <div
@@ -158,6 +169,14 @@
               <h3 class="session-title">{{ses.title}}</h3>
               <div class="session-meta">{{ses.metaText}}</div>
               <div
+                class="pitch-flag"
+                data-if="ses.pitchLabel"
+                :class="{'pitch-flag--strong': ses.pitchRisk === 'pitch', 'pitch-flag--soft': ses.pitchRisk === 'vendor'}"
+                :title="ses.pitchReason"
+              >
+                ⚠ {{ses.pitchLabel}}
+              </div>
+              <div
                 class="session-tags"
                 data-each="ses.tags"
                 data-as="pill"
@@ -212,6 +231,14 @@
           <article class="agenda-card">
             <h3 class="agenda-title">{{pick.title}}</h3>
             <div class="agenda-meta">{{pick.metaText}}</div>
+            <div
+              class="pitch-flag"
+              data-if="pick.pitchLabel"
+              :class="{'pitch-flag--strong': pick.pitchRisk === 'pitch', 'pitch-flag--soft': pick.pitchRisk === 'vendor'}"
+              :title="pick.pitchReason"
+            >
+              ⚠ {{pick.pitchLabel}}
+            </div>
             <p class="agenda-rationale" data-if="pick.rationale">{{pick.rationale}}</p>
             <div
               class="agenda-tags"

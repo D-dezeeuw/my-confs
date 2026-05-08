@@ -103,6 +103,7 @@ def parse(path: Path) -> list[dict]:
                 break
             if (
                 len(line) > 80
+                or len(line.split()) > 5
                 or line.endswith(".")
                 or line.endswith("?")
                 or line.endswith(":")

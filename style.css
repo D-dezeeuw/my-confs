@@ -253,6 +253,45 @@ button.ghost {
   color: var(--text);
 }
 
+.pitch-toggle {
+  font-weight: 600;
+}
+
+.pitch-toggle.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--alt);
+  color: #fcd58e;
+}
+
+/* ---------- Pitch / vendor flag pill ---------- */
+
+.pitch-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: help;
+  user-select: none;
+}
+
+.pitch-flag--strong {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbcb6c;
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.pitch-flag--soft {
+  background: rgba(154, 161, 178, 0.14);
+  color: #c8cdd9;
+  border-color: rgba(154, 161, 178, 0.35);
+}
+
 /* ---------- Schedule grid ---------- */
 
 .schedule {

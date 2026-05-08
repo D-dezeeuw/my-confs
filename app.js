@@ -15,6 +15,82 @@ import {
   getPathObj,
 } from "spektrum";
 
+// ---------- vendor / pitch detection -----------------------------------
+//
+// Curated list of companies whose employees often present product-led
+// content. Match is on lowercase substring of the speaker's worksFor
+// field, so "Auth0" matches "Auth0", "Auth0 / Okta", etc. Add or remove
+// entries here to tune. Non-vendor companies (BigCo internal case studies,
+// universities, foundations) are deliberately absent — speakers from those
+// orgs can still be product-pitch-y if their talk literally markets the
+// product, but we treat them as `neutral` by default.
+
+const VENDOR_COMPANIES = [
+  "apify",
+  "auth0",
+  "aerospike",
+  "cerbos",
+  "cloudflare",
+  "cloudsmith",
+  "crab nebula",
+  "datadog",
+  "directus",
+  "dynatrace",
+  "gitbook",
+  "gitlab",
+  "harness",
+  "neo4j",
+  "novium",
+  "oracle",
+  "sentry",
+  "solace",
+  "sonar",
+  "storyblok",
+  "tailscale",
+  "tauri",
+  "tryhackme",
+];
+
+const PITCH_JOB_TITLES = /devrel|developer\s+advocate|evangelist|gtm|sales/i;
+
+function classifyPitchRisk(session) {
+  const speakerInfos = session.speakerInfo || [];
+  if (speakerInfos.length === 0) return { risk: "neutral", reason: "" };
+
+  const haystack = `${session.title || ""} ${session.description || ""}`.toLowerCase();
+
+  for (const info of speakerInfos) {
+    const company = (info.company || "").trim();
+    if (!company) continue;
+    const companyLower = company.toLowerCase();
+    // Tier 1: company name explicitly appears in the talk title or description.
+    if (companyLower && haystack.includes(companyLower)) {
+      return {
+        risk: "pitch",
+        reason: `Speaker is from ${company} and the talk mentions ${company}.`,
+      };
+    }
+  }
+
+  for (const info of speakerInfos) {
+    const company = (info.company || "").toLowerCase();
+    if (VENDOR_COMPANIES.some((v) => company.includes(v))) {
+      return {
+        risk: "vendor",
+        reason: `Speaker is from ${info.company} (vendor company).`,
+      };
+    }
+    if (PITCH_JOB_TITLES.test(info.jobTitle || "")) {
+      return {
+        risk: "vendor",
+        reason: `Speaker job title (${info.jobTitle}) is a product-outreach role.`,
+      };
+    }
+  }
+
+  return { risk: "neutral", reason: "" };
+}
+
 // ---------- role templates ---------------------------------------------
 
 const ROLE_TEMPLATES = [
@@ -88,6 +164,7 @@ const STORAGE = {
   context: "dw26.context",
   tagFilters: "dw26.tagFilters",
   stageFilters: "dw26.stageFilters",
+  hidePitches: "dw26.hidePitches",
   rawRecs: "dw26.rawRecs",
   overallAdvice: "dw26.overallAdvice",
 };
@@ -146,6 +223,10 @@ function initialState() {
   setValue("stagesAvailable", []);
   setValue("tagFilters", safeJson(localStorage.getItem(STORAGE.tagFilters), []));
   setValue("stageFilters", safeJson(localStorage.getItem(STORAGE.stageFilters), []));
+  setValue(
+    "hidePitches",
+    localStorage.getItem(STORAGE.hidePitches) === "1"
+  );
   setValue("context", localStorage.getItem(STORAGE.context) || "");
   setValue("apiKey", localStorage.getItem(STORAGE.apiKey) || "");
   setValue(
@@ -215,11 +296,31 @@ async function loadSessions() {
 function enrichSession(s, idx) {
   const time = s.time || "00:00";
   const end = s.time ? addMinutes(s.time, parseDuration(s.duration)) : null;
+  const speakerInfo = s.speakerInfo || [];
+
+  // Speaker text in card meta: "Name · Company" when we have it.
+  const speakerLabel = speakerInfo.length
+    ? speakerInfo
+        .map((info) =>
+          info.company ? `${info.name} · ${info.company}` : info.name
+        )
+        .join(", ")
+    : (s.speakers || []).join(", ");
+
   const metaBits = [];
   if (s.stage) metaBits.push(s.stage);
   if (s.duration) metaBits.push(s.duration);
   if (end && s.time) metaBits.push(`${s.time}–${end}`);
-  if (s.speakers?.length) metaBits.push(s.speakers.join(", "));
+  if (speakerLabel) metaBits.push(speakerLabel);
+
+  const { risk: pitchRisk, reason: pitchReason } = classifyPitchRisk(s);
+  const pitchLabel =
+    pitchRisk === "pitch"
+      ? "Likely pitch"
+      : pitchRisk === "vendor"
+      ? "Vendor talk"
+      : "";
+
   return {
     id: idx,
     title: s.title,
@@ -229,6 +330,7 @@ function enrichSession(s, idx) {
     duration: s.duration,
     stage: s.stage || "",
     speakers: s.speakers || [],
+    speakerInfo,
     tags: s.tags || [],
     description: s.description || "",
     metaText: metaBits.join("  ·  "),
@@ -236,6 +338,9 @@ function enrichSession(s, idx) {
     recKind: "",
     recLabel: "",
     recRationale: "",
+    pitchRisk,
+    pitchLabel,
+    pitchReason,
   };
 }
 
@@ -267,18 +372,20 @@ function registerComputeds() {
   // slots: group sessions by time, attach filter/recommendation state.
   computed(
     "slots",
-    ["sessions", "tagFilters", "stageFilters", "rawRecs"],
+    ["sessions", "tagFilters", "stageFilters", "hidePitches", "rawRecs"],
     (state) => {
       const sessions = state.sessions || [];
       const tagF = new Set(state.tagFilters || []);
       const stageF = new Set(state.stageFilters || []);
+      const hidePitches = !!state.hidePitches;
       const recs = state.rawRecs; // plain object map: norm-title -> {kind, rationale}
 
       const map = new Map();
       for (const s of sessions) {
         const visible =
           (tagF.size === 0 || s.tags.some((t) => tagF.has(t))) &&
-          (stageF.size === 0 || stageF.has(s.stage));
+          (stageF.size === 0 || stageF.has(s.stage)) &&
+          (!hidePitches || s.pitchRisk !== "pitch");
         const r = recs ? recs[normalize(s.title)] : null;
         const enriched = {
           ...s,
@@ -389,6 +496,12 @@ function registerHandlers() {
     const next = togglePresence(state.stageFilters || [], stage);
     setValue("stageFilters", next);
     localStorage.setItem(STORAGE.stageFilters, JSON.stringify(next));
+  });
+
+  defineFn("toggleHidePitches", (_el, state) => {
+    const next = !state.hidePitches;
+    setValue("hidePitches", next);
+    localStorage.setItem(STORAGE.hidePitches, next ? "1" : "0");
   });
 
   defineFn("saveSettings", (_el, state, delta) => {
@@ -560,8 +673,14 @@ async function callOpenRouter(context, sessions, apiKey, model) {
     time: s.time,
     duration: s.duration,
     stage: s.stage,
-    speakers: s.speakers,
+    speakers: (s.speakerInfo || []).map((info) => ({
+      name: info.name,
+      company: info.company || null,
+      jobTitle: info.jobTitle || null,
+    })),
     tags: s.tags,
+    pitchRisk: s.pitchRisk,
+    pitchReason: s.pitchReason || null,
     description: (s.description || "").slice(0, 600),
   }));
 
@@ -574,6 +693,11 @@ Rules:
 - Some sessions span multiple slots (workshops, networking mixers). When you pick one, mention the conflict
   in the rationale so the user knows what they'd be giving up.
 - Prefer hands-on / advanced content over introductory talks unless the user asked otherwise.
+- Each session has a pitchRisk field: "pitch" means the speaker's company is likely being marketed in the
+  talk (vendor sales pitch); "vendor" means the speaker works for a product company or in a developer-
+  outreach role (DevRel/advocate). Treat "pitch" as a strong negative unless the user explicitly asked for
+  product demos. Surface the conflict in the rationale ("vendor talk — speaker is from <Company>"). A
+  "vendor" tag alone is a soft signal, not disqualifying — many vendor talks are technically deep.
 - Skip slots only if every session at that slot is clearly irrelevant.
 - Keep rationales tight: one or two sentences each.
 
