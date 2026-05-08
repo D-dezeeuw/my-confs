@@ -1154,33 +1154,40 @@ function faviconUrl() {
   return new URL("./favicon.svg", window.location.href).href;
 }
 
-// Keep the now-line visible inside the horizontally-scrolling timeline.
-// Re-runs whenever the live view becomes active or `nowOffset` updates.
+// Scroll the timeline so the now-line sits ~28% from the left edge,
+// but only when the user enters the live view (not on every per-minute
+// clock tick — that would yank a user mid-scroll back to now).
+//
+// We also defer the scroll into a requestAnimationFrame: spektrum runs
+// systems in registration order, so this system fires *before* the
+// data-if binder flips .live from display:none to display:block. At
+// that moment .timeline-scroll.clientWidth is still 0 and scrollTo()
+// is a no-op (or gets reset by the upcoming display flip). rAF lets the
+// next frame apply the display change and layout, then we scroll.
 function wireTimelineAutoScroll() {
-  let lastApplied = -1;
+  let prevView = null;
   addSystem(["view", "nowOffset"], (state) => {
+    const viewChanged = state.view !== prevView;
+    prevView = state.view;
     if (state.view !== "live") return;
+    if (!viewChanged) return;
     const offset = state.nowOffset;
     if (offset == null) return;
-    if (offset === lastApplied) return;
-    const el = refs.timelineScroll;
-    if (!el) return;
-    // The now-line is rendered at `stage-col-width + nowOffset` from the
-    // .timeline left edge (the stage column is sticky; ticks and now-line
-    // share its offset). Read the live value so the math also matches the
-    // 120px desktop override.
-    const stageCol =
-      parseInt(
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--stage-col-width")
-          .trim(),
-        10
-      ) || 88;
-    const nowX = stageCol + offset;
-    // Place the now-line ~28% from the left edge of the visible area.
-    const target = Math.max(0, nowX - el.clientWidth * 0.28);
-    el.scrollTo({ left: target, behavior: "smooth" });
-    lastApplied = offset;
+    requestAnimationFrame(() => {
+      const el = refs.timelineScroll;
+      if (!el || el.clientWidth === 0) return;
+      // Read the live value so it matches the desktop override too.
+      const stageCol =
+        parseInt(
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--stage-col-width")
+            .trim(),
+          10
+        ) || 88;
+      const nowX = stageCol + offset;
+      const target = Math.max(0, nowX - el.clientWidth * 0.28);
+      el.scrollTo({ left: target, behavior: "auto" });
+    });
   });
 }
 
