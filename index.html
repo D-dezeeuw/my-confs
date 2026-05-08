@@ -12,7 +12,8 @@
     <script type="importmap">
       {
         "imports": {
-          "spektrum": "./vendor/spektrum.js"
+          "spektrum": "./vendor/spektrum.js",
+          "canvas-confetti": "./vendor/confetti.js"
         }
       }
     </script>
@@ -125,6 +126,7 @@
             data-action="click"
             data-fn="recommend"
           >
+            <span class="spinner" data-if="loading" aria-hidden="true"></span>
             {{loading ? 'Thinking…' : 'Get recommendations'}}
           </button>
           <button

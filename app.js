@@ -17,6 +17,56 @@ import {
   appState,
   appStateDelta,
 } from "spektrum";
+import confetti from "canvas-confetti";
+
+// ---------- Confetti --------------------------------------------------
+//
+// Two preset bursts. Both honour prefers-reduced-motion automatically via
+// canvas-confetti's `disableForReducedMotion` option. Origin is computed
+// from a triggering DOM element so the explosion appears to come from
+// the button / control the user just used.
+
+const CONFETTI_COLORS = ["#7c5cff", "#2dd4bf", "#f59e0b", "#ef4444", "#fcd58e"];
+
+function fireConfetti(kind, originEl) {
+  if (typeof confetti !== "function") return;
+  const origin = elementOrigin(originEl);
+  const opts = {
+    colors: CONFETTI_COLORS,
+    disableForReducedMotion: true,
+    origin,
+  };
+  if (kind === "small") {
+    confetti({ ...opts, particleCount: 60, spread: 55, startVelocity: 30 });
+  } else {
+    // "burst" — for big wins like a fresh recommendation set
+    confetti({ ...opts, particleCount: 200, spread: 90, startVelocity: 45 });
+    // Two-stage spawn for a more cinematic feel.
+    setTimeout(() => {
+      confetti({
+        ...opts,
+        particleCount: 80,
+        spread: 120,
+        startVelocity: 35,
+        origin: { x: origin.x, y: Math.max(0, origin.y - 0.05) },
+      });
+    }, 180);
+  }
+}
+
+function elementOrigin(el) {
+  // Default: middle-bottom of the viewport.
+  if (!el || typeof el.getBoundingClientRect !== "function") {
+    return { x: 0.5, y: 0.6 };
+  }
+  const r = el.getBoundingClientRect();
+  const x = (r.left + r.width / 2) / window.innerWidth;
+  const y = (r.top + r.height / 2) / window.innerHeight;
+  return {
+    x: Math.min(1, Math.max(0, x)),
+    y: Math.min(1, Math.max(0, y)),
+  };
+}
 
 // ---------- vendor / pitch detection -----------------------------------
 //
@@ -768,6 +818,7 @@ function registerHandlers() {
       text: `Template applied: ${tmpl.label}. Edit to taste.`,
       kind: "muted",
     });
+    fireConfetti("small", el);
   });
 
   defineFn("toggleTagFilter", (el, state) => {
@@ -904,7 +955,7 @@ function registerHandlers() {
     }
   });
 
-  defineFn("recommend", async (_el, state, delta) => {
+  defineFn("recommend", async (el, state, delta) => {
     const live = { ...state, ...delta };
     const ctx = (live.context || "").trim();
     if (!ctx) {
@@ -949,6 +1000,7 @@ function registerHandlers() {
       // silently suppressed. (Subsequent reloads preserve this list.)
       setValue("notifiedIds", []);
       localStorage.removeItem(STORAGE.notifiedIds);
+      fireConfetti("burst", el);
       setValue("status", {
         text: `Recommendations ready (${recs.slots?.length ?? 0} slots).`,
         kind: "muted",

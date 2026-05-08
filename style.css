@@ -213,6 +213,31 @@ button.primary:disabled {
   cursor: not-allowed;
 }
 
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: dw-spin 0.8s linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+  flex: 0 0 auto;
+}
+
+@keyframes dw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
 button.ghost {
   background: transparent;
 }
