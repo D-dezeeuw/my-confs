@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="my-confs timeline icon">
+  <title>my-confs</title>
+  <!-- Surface (matches app --surface) -->
+  <rect width="64" height="64" rx="14" fill="#171922"/>
+
+  <!-- Stage column hint on the left -->
+  <rect x="6" y="10" width="6" height="44" rx="2" fill="#1f222d"/>
+
+  <!-- Track lanes: one accent (pick) + three muted -->
+  <rect x="14" y="12" width="36" height="6" rx="3" fill="#7c5cff"/>
+  <rect x="14" y="22" width="28" height="6" rx="3" fill="#3a3554"/>
+  <rect x="14" y="32" width="42" height="6" rx="3" fill="#3a3554"/>
+  <rect x="14" y="42" width="22" height="6" rx="3" fill="#3a3554"/>
+
+  <!-- "Now" indicator: vertical red line + cap dot -->
+  <line x1="32" y1="8" x2="32" y2="56" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="8" r="2.6" fill="#ef4444"/>
+</svg>

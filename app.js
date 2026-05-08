@@ -593,9 +593,12 @@ function registerComputeds() {
       const h = Math.floor(m / 60) % 24;
       const mm = m % 60;
       const label = `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+      // Shift by the stage-column width so ticks line up with the lanes
+      // (which start after the sticky stage-label column on each row).
+      // Width set via CSS var --stage-col-width; falls back to 88px.
       ticks.push({
         label,
-        style: `left: ${(m - origin) * PX_PER_MINUTE}px;`,
+        style: `left: calc(var(--stage-col-width, 88px) + ${(m - origin) * PX_PER_MINUTE}px);`,
         major: mm === 0,
       });
     }
@@ -644,7 +647,9 @@ function registerComputeds() {
 
   computed("nowStyle", ["nowOffset"], (state) => {
     const o = state.nowOffset;
-    return o == null ? "display: none;" : `left: ${o}px;`;
+    return o == null
+      ? "display: none;"
+      : `left: calc(var(--stage-col-width, 88px) + ${o}px);`;
   });
 
   // hasRecommendations boolean for the Strategy card + Clear button.
@@ -956,8 +961,20 @@ function wireTimelineAutoScroll() {
     if (offset === lastApplied) return;
     const el = refs.timelineScroll;
     if (!el) return;
+    // The now-line is rendered at `stage-col-width + nowOffset` from the
+    // .timeline left edge (the stage column is sticky; ticks and now-line
+    // share its offset). Read the live value so the math also matches the
+    // 120px desktop override.
+    const stageCol =
+      parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--stage-col-width")
+          .trim(),
+        10
+      ) || 88;
+    const nowX = stageCol + offset;
     // Place the now-line ~28% from the left edge of the visible area.
-    const target = Math.max(0, offset - el.clientWidth * 0.28);
+    const target = Math.max(0, nowX - el.clientWidth * 0.28);
     el.scrollTo({ left: target, behavior: "smooth" });
     lastApplied = offset;
   });

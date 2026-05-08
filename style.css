@@ -15,6 +15,16 @@
   --radius: 10px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.18);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Width of the sticky stage-label column inside each timeline row.
+   * The time axis ticks and the now-line bake this offset in via calc()
+   * so they line up with the lanes (which start after this column). */
+  --stage-col-width: 88px;
+}
+
+@media (min-width: 700px) {
+  :root {
+    --stage-col-width: 120px;
+  }
 }
 
 * {
@@ -1066,8 +1076,8 @@ details[open] summary {
   position: sticky;
   left: 0;
   z-index: 3;
-  flex: 0 0 88px;
-  width: 88px;
+  flex: 0 0 var(--stage-col-width);
+  width: var(--stage-col-width);
   background: var(--surface-2);
   padding: 8px 10px;
   font-size: 0.75rem;
@@ -1184,8 +1194,6 @@ details[open] summary {
 
 @media (min-width: 700px) {
   .timeline-stage {
-    flex-basis: 120px;
-    width: 120px;
     font-size: 0.85rem;
   }
   .timeline-row {

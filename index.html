@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DevWorld 2026 — Personalized Schedule</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./favicon.svg" />
+    <meta name="theme-color" content="#0e0f13" />
     <link rel="stylesheet" href="./style.css" />
     <script src="./config.js"></script>
     <script type="importmap">
@@ -283,7 +286,10 @@
       </header>
 
       <div class="timeline-scroll" data-ref="timelineScroll">
-        <div class="timeline" :style="'width: ' + timelineWidth + 'px;'">
+        <div
+          class="timeline"
+          :style="'width: calc(var(--stage-col-width) + ' + timelineWidth + 'px);'"
+        >
           <div
             class="timeline-axis"
             data-each="timeAxis"
