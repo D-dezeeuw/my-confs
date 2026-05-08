@@ -244,9 +244,26 @@ const NOTIFY_POLL_MS = 30_000;
       kind: "muted",
     });
   }
+  // Prompt the user up front when no API key is configured anywhere.
+  // The ?api= URL param is already consumed into localStorage above, so
+  // this only fires when neither the URL, localStorage, nor config.js
+  // gave us a key.
+  promptForApiKeyIfMissing();
   bindDOM();
   run();
 })();
+
+function promptForApiKeyIfMissing() {
+  const stored = localStorage.getItem(STORAGE.apiKey) || "";
+  const fallback =
+    (window.APP_CONFIG && window.APP_CONFIG.OPENROUTER_API_KEY) || "";
+  if (stored.trim() || fallback.trim()) return;
+  setValue("settingsOpen", true);
+  setValue("status", {
+    text: "Paste your OpenRouter API key to enable recommendations.",
+    kind: "muted",
+  });
+}
 
 // Parse `?api=...` (or alias `?key=...`) on boot, persist the value to
 // localStorage, then strip the param from the URL bar via replaceState so
