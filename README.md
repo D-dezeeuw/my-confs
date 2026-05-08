@@ -163,6 +163,43 @@ black text, force-opens the strategy block, and applies
 `page-break-inside: avoid` per pick. Pick "Save as PDF" in the browser's
 print dialog. Real searchable text — no rasterisation.
 
+## Notifications (5-min heads-up)
+
+A banner in the agenda view offers an **Enable** button. After granting
+browser permission you'll get a desktop / OS-level notification 5 minutes
+before each recommended session starts. The notification includes the time,
+title, stage, and speaker(s) with their company.
+
+How it works:
+
+- An in-page `setInterval` polls every 30 seconds against the agenda picks.
+- For each pick, the scheduler computes `today.startTime - 5 min`. If the
+  current time is in the 60-second window leading up to that, it fires a
+  `new Notification(...)` and remembers the pick id in `localStorage`
+  (`dw26.notifiedIds`) so reloads don't re-fire.
+- Picks already past their fire-time are silently marked as notified-or-stale
+  — you never receive a "5 min before" alert for a session that already
+  started.
+- Generating a new set of recommendations resets the notified list.
+
+> **Caveats:**
+>
+> - The tab must remain open in some browser window. Static GitHub Pages
+>   sites can't push from a server, so there is no way to notify with the
+>   page closed.
+> - Background tabs are throttled by browsers (typically to once per minute),
+>   which is fine for the 30-second poll. The `visibilitychange` listener
+>   triggers an immediate catch-up poll when you switch back to the tab.
+> - **iOS Safari**: Notifications API works while the tab is foreground.
+>   For background notifications you'd need to install the site to your
+>   home screen as a PWA — out of scope for this static demo.
+> - Times in `sessions.json` are HH:MM only; the scheduler uses **today's
+>   date** as the date component. If you open the app on a non-conference
+>   day, notifications fire at "today's" replicated times.
+
+A **Test** button (visible after Enable) sends a one-shot notification so
+you can confirm permission works without waiting for an actual pick.
+
 ## Mobile-first
 
 Base styles target small viewports (single-column layout, full-width

@@ -238,6 +238,53 @@
         <p>{{overallAdvice}}</p>
       </details>
 
+      <div
+        class="notify-banner"
+        data-if="agendaItems.length > 0 && notificationPermission !== 'unsupported'"
+        :class="{'notify-banner--on': notifyEnabled && notificationPermission === 'granted', 'notify-banner--denied': notificationPermission === 'denied'}"
+      >
+        <span class="notify-icon" aria-hidden="true">🔔</span>
+        <span
+          class="notify-label"
+          data-if="!(notifyEnabled && notificationPermission === 'granted') && notificationPermission !== 'denied'"
+          >Heads-up 5 min before each pick</span
+        >
+        <span
+          class="notify-label"
+          data-if="notifyEnabled && notificationPermission === 'granted'"
+          >Notifications on · {{notifyScheduledCount}} pending</span
+        >
+        <span
+          class="notify-label"
+          data-if="notificationPermission === 'denied'"
+          >Notifications blocked in browser settings</span
+        >
+        <button
+          class="primary notify-action"
+          data-if="!(notifyEnabled && notificationPermission === 'granted') && notificationPermission !== 'denied'"
+          data-action="click"
+          data-fn="enableNotifications"
+        >
+          Enable
+        </button>
+        <button
+          class="ghost notify-action"
+          data-if="notifyEnabled && notificationPermission === 'granted'"
+          data-action="click"
+          data-fn="testNotification"
+        >
+          Test
+        </button>
+        <button
+          class="ghost notify-action"
+          data-if="notifyEnabled && notificationPermission === 'granted'"
+          data-action="click"
+          data-fn="disableNotifications"
+        >
+          Off
+        </button>
+      </div>
+
       <ol class="agenda-list" data-each="agendaItems" data-as="pick" data-key="pick.id">
         <li class="agenda-row">
           <div class="agenda-time">{{pick.timeLabel}}</div>

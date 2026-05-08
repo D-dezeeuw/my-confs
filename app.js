@@ -14,6 +14,8 @@ import {
   addSystem,
   getPathObj,
   refs,
+  appState,
+  appStateDelta,
 } from "spektrum";
 
 // ---------- vendor / pitch detection -----------------------------------
@@ -212,7 +214,14 @@ const STORAGE = {
   timelineMode: "dw26.timelineMode",
   rawRecs: "dw26.rawRecs",
   overallAdvice: "dw26.overallAdvice",
+  notifyEnabled: "dw26.notifyEnabled",
+  notifiedIds: "dw26.notifiedIds",
 };
+
+// Reminder fires this many minutes before a recommended session start.
+const NOTIFY_LEAD_MIN = 5;
+// How often the in-page scheduler polls (ms).
+const NOTIFY_POLL_MS = 30_000;
 
 // ---------- bootstrap ---------------------------------------------------
 
@@ -226,6 +235,7 @@ const STORAGE = {
   wireGlobalKeys();
   wireClock();
   wireTimelineAutoScroll();
+  wireNotifications();
   await loadCompanies();
   await loadSessions();
   if (keyFromUrl) {
@@ -306,6 +316,22 @@ function initialState() {
   setValue("nowOffset", null);
   setValue("timelineWidth", 0);
   setValue("selectedSession", null);
+  setValue(
+    "notifyEnabled",
+    localStorage.getItem(STORAGE.notifyEnabled) === "1"
+  );
+  setValue("notificationPermission", initialNotificationPermission());
+  setValue(
+    "notifiedIds",
+    safeJson(localStorage.getItem(STORAGE.notifiedIds), [])
+  );
+  setValue("notifyScheduledCount", 0);
+}
+
+function initialNotificationPermission() {
+  if (typeof window === "undefined") return "unsupported";
+  if (!("Notification" in window)) return "unsupported";
+  return Notification.permission;
 }
 
 function deriveViewFromHash() {
@@ -658,6 +684,15 @@ function registerComputeds() {
     return !!r && Object.keys(r).length > 0;
   });
 
+  // notifyScheduledCount: how many picks are still waiting on a reminder
+  // (i.e. id not yet in notifiedIds). Once the scheduler poll fires (or
+  // marks past-time picks as stale), they drop out of this count.
+  computed("notifyScheduledCount", ["agendaItems", "notifiedIds"], (state) => {
+    const items = state.agendaItems || [];
+    const notified = new Set(state.notifiedIds || []);
+    return items.filter((i) => !notified.has(i.id)).length;
+  });
+
   // agendaItems: just the picks, in chronological order, enriched with rationale.
   computed("agendaItems", ["sessions", "rawRecs"], (state) => {
     const recs = state.rawRecs;
@@ -810,6 +845,47 @@ function registerHandlers() {
     if (ev && ev.target === el) setValue("selectedSession", null);
   });
 
+  defineFn("enableNotifications", async () => {
+    if (!("Notification" in window)) return;
+    let perm = Notification.permission;
+    if (perm === "default") {
+      try {
+        perm = await Notification.requestPermission();
+      } catch {
+        perm = Notification.permission;
+      }
+    }
+    setValue("notificationPermission", perm);
+    if (perm === "granted") {
+      setValue("notifyEnabled", true);
+      localStorage.setItem(STORAGE.notifyEnabled, "1");
+      pollNotifications(); // catch up immediately for any pick already in-window
+    }
+  });
+
+  defineFn("disableNotifications", () => {
+    setValue("notifyEnabled", false);
+    localStorage.setItem(STORAGE.notifyEnabled, "0");
+  });
+
+  defineFn("testNotification", () => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    try {
+      const n = new Notification("DevWorld 2026 reminder", {
+        body: "Notifications working — you'll get one 5 min before each pick.",
+        icon: faviconUrl(),
+        tag: "dw26-test",
+      });
+      n.onclick = () => {
+        window.focus();
+        n.close();
+      };
+    } catch (err) {
+      console.warn("Notification test failed:", err);
+    }
+  });
+
   defineFn("recommend", async (_el, state, delta) => {
     const live = { ...state, ...delta };
     const ctx = (live.context || "").trim();
@@ -850,6 +926,11 @@ function registerHandlers() {
       const map = recsToMap(recs);
       setValue("rawRecs", map);
       setValue("overallAdvice", recs.overall_advice || "");
+      // Fresh agenda → reset which picks have been notified about so a
+      // pick whose id matches one we previously alerted about doesn't get
+      // silently suppressed. (Subsequent reloads preserve this list.)
+      setValue("notifiedIds", []);
+      localStorage.removeItem(STORAGE.notifiedIds);
       setValue("status", {
         text: `Recommendations ready (${recs.slots?.length ?? 0} slots).`,
         kind: "muted",
@@ -948,6 +1029,129 @@ function wireGlobalKeys() {
 
 function wireClock() {
   setInterval(() => setValue("timelineNow", currentMinutes()), 60_000);
+}
+
+// ---------- Notifications scheduler ------------------------------------
+//
+// In-page poll: every NOTIFY_POLL_MS we walk the agenda picks and fire a
+// browser Notification 5 minutes before each pick's start time. Already-
+// notified picks (and picks already past the fire window) are tracked in
+// state.notifiedIds, persisted across reloads.
+//
+// Caveat: this runs in the open tab. If the user closes it, no
+// notifications. Browsers throttle background tabs but most still let
+// setInterval fire roughly once per minute, which catches our 30s window.
+
+function wireNotifications() {
+  // Catch up immediately on tab focus + on visibility return + on
+  // recommendations changing (newly-generated picks may already be in
+  // the 5-min window).
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) pollNotifications();
+  });
+  addSystem(["agendaItems"], () => pollNotifications());
+  setInterval(pollNotifications, NOTIFY_POLL_MS);
+}
+
+function pollNotifications() {
+  if (!("Notification" in window)) return;
+  // Read live state (delta-merged) so we see the most recent notifyEnabled
+  // and notifiedIds without waiting for another tick.
+  const enabled = getLiveValue("notifyEnabled");
+  if (!enabled) return;
+  if (Notification.permission !== "granted") return;
+
+  const items = getLiveValue("agendaItems") || [];
+  if (items.length === 0) return;
+
+  const notified = new Set(getLiveValue("notifiedIds") || []);
+  const before = notified.size;
+  const nowMs = Date.now();
+  const fired = [];
+
+  for (const pick of items) {
+    if (notified.has(pick.id)) continue;
+    const startMs = todayAtMs(pick.time);
+    if (startMs == null) {
+      // No published time (e.g. opening Duck stage talks) — silent skip.
+      notified.add(pick.id);
+      continue;
+    }
+    const fireAt = startMs - NOTIFY_LEAD_MIN * 60_000;
+    const dt = fireAt - nowMs;
+
+    if (dt < -60_000) {
+      // Past our fire window. Mark as notified-or-stale; never fire late.
+      notified.add(pick.id);
+      continue;
+    }
+    if (dt <= 0) {
+      // Within the fire window — fire and remember.
+      fireSessionNotification(pick);
+      notified.add(pick.id);
+      fired.push(pick);
+    }
+  }
+
+  if (notified.size !== before) {
+    const arr = [...notified];
+    setValue("notifiedIds", arr);
+    localStorage.setItem(STORAGE.notifiedIds, JSON.stringify(arr));
+  }
+  if (fired.length) {
+    console.info(
+      `[dw26] fired ${fired.length} notification(s):`,
+      fired.map((p) => p.title)
+    );
+  }
+}
+
+// Read the latest value for a top-level path, preferring the in-flight
+// delta over the committed state. Avoids waiting a tick for setValue
+// writes from one handler to be visible in another.
+function getLiveValue(key) {
+  if (appStateDelta && key in appStateDelta) return appStateDelta[key];
+  return appState ? appState[key] : undefined;
+}
+
+function fireSessionNotification(pick) {
+  const time = pick.time || pick.timeLabel || "";
+  const stage = pick.stage ? `${pick.stage}` : "";
+  const speakers = (pick.speakerInfo || [])
+    .map((s) => (s.company ? `${s.name} (${s.company})` : s.name))
+    .join(", ");
+  const bodyParts = [`Starts in ${NOTIFY_LEAD_MIN} min`];
+  if (stage) bodyParts.push(stage);
+  if (speakers) bodyParts.push(speakers);
+
+  try {
+    const n = new Notification(`${time} · ${pick.title}`, {
+      body: bodyParts.join(" · "),
+      icon: faviconUrl(),
+      tag: `dw26-session-${pick.id}`,
+      requireInteraction: false,
+    });
+    n.onclick = () => {
+      window.focus();
+      window.location.hash = "#agenda";
+      n.close();
+    };
+  } catch (err) {
+    console.warn("Notification fire failed:", err);
+  }
+}
+
+function todayAtMs(hhmm) {
+  if (!hhmm || typeof hhmm !== "string") return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+}
+
+function faviconUrl() {
+  return new URL("./favicon.svg", window.location.href).href;
 }
 
 // Keep the now-line visible inside the horizontally-scrolling timeline.
