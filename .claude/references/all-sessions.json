@@ -257,15 +257,12 @@
     "location": "Hall 3",
     "stage": "Duck Stage 3",
     "speakers": [
-      "A practical understanding of how ASTs can power AI-driven code automation",
-      "Real examples of self-updating and self-healing code",
-      "Strategies to integrate these ideas into your team’s productivity toolkit",
       "andrei.tazetdinov"
     ],
     "tags": [
       "ai"
     ],
-    "description": "How code understanding and automation can transform your team’s and clients productivity.\n\nWhat if your codebase could improve itself?\n\nIn this talk, we’ll explore how combining Abstract Syntax Trees (AST) with AI can turn your development workflow into a self-evolving system. While AI tools like Copilot help us write code faster, they still lack a deep understanding of structure and context. ASTs, on the other hand, can precisely navigate, analyze, and transform code — safely and automatically.\n\nBy merging these two forces, we can build intelligent automation that doesn’t just suggest improvements but actually applies them — from API migrations and performance optimizations to automated instrumentation and observability hooks.\n\nI’ll share how our team uses AST-based transformations and AI-driven insights to eliminate repetitive work, speed up code reviews, and let engineers focus on solving real problems instead of chasing syntax.\n\nYou’ll walk away with:"
+    "description": "How code understanding and automation can transform your team’s and clients productivity.\n\nWhat if your codebase could improve itself?\n\nIn this talk, we’ll explore how combining Abstract Syntax Trees (AST) with AI can turn your development workflow into a self-evolving system. While AI tools like Copilot help us write code faster, they still lack a deep understanding of structure and context. ASTs, on the other hand, can precisely navigate, analyze, and transform code — safely and automatically.\n\nBy merging these two forces, we can build intelligent automation that doesn’t just suggest improvements but actually applies them — from API migrations and performance optimizations to automated instrumentation and observability hooks.\n\nI’ll share how our team uses AST-based transformations and AI-driven insights to eliminate repetitive work, speed up code reviews, and let engineers focus on solving real problems instead of chasing syntax.\n\nYou’ll walk away with:\n\nA practical understanding of how ASTs can power AI-driven code automation\nReal examples of self-updating and self-healing code\nStrategies to integrate these ideas into your team’s productivity toolkit"
   },
   {
     "title": "How to feed your AI agents with data",
