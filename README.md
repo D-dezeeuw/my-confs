@@ -157,6 +157,12 @@ Recommendations + the strategy paragraph + your context are persisted in
 `localStorage` (`dw26.rawRecs`, `dw26.overallAdvice`, `dw26.context`).
 Revisit the page with `#agenda` and you land directly on your saved picks.
 
+A **Save PDF** button in the agenda header runs `window.print()` against a
+print stylesheet that hides app chrome, switches to white background and
+black text, force-opens the strategy block, and applies
+`page-break-inside: avoid` per pick. Pick "Save as PDF" in the browser's
+print dialog. Real searchable text — no rasterisation.
+
 ## Mobile-first
 
 Base styles target small viewports (single-column layout, full-width

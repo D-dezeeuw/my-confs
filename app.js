@@ -417,6 +417,13 @@ function registerHandlers() {
     window.scrollTo({ top: 0, behavior: "auto" });
   });
 
+  defineFn("exportPdf", () => {
+    // window.print() with a print stylesheet — zero deps, real searchable
+    // text in the PDF, native browser dialog. Print stylesheet hides app
+    // chrome and forces details elements open so the strategy block prints.
+    window.print();
+  });
+
   defineFn("goSchedule", () => {
     setValue("view", "schedule");
     if (window.location.hash !== "#schedule" && window.location.hash !== "") {

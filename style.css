@@ -603,6 +603,20 @@ details[open] summary {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.agenda-export {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  min-height: 40px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.print-only {
+  display: none;
 }
 
 .agenda-heading h2 {
@@ -773,5 +787,135 @@ details[open] summary {
 
   .agenda {
     padding: 24px;
+  }
+}
+
+/* ---------- Print (Save as PDF) ---------- */
+@media print {
+  @page {
+    margin: 14mm 14mm 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide everything except the agenda. */
+  .topbar,
+  .fab,
+  .modal-overlay,
+  .layout,
+  .agenda-empty,
+  .agenda-header,
+  .agenda-export {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .print-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 16pt;
+    color: black;
+  }
+
+  .agenda {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Force the strategy <details> open in print regardless of UI state. */
+  details {
+    display: block !important;
+  }
+  details > * {
+    display: revert !important;
+  }
+  details > summary {
+    list-style: none;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: black;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .agenda-strategy {
+    background: white !important;
+    border: 1px solid #d0d0d0 !important;
+    color: black !important;
+    box-shadow: none !important;
+    margin-bottom: 12pt !important;
+    padding: 10pt !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .agenda-strategy p {
+    color: #222 !important;
+  }
+
+  .agenda-list {
+    gap: 8pt;
+  }
+
+  .agenda-row {
+    grid-template-columns: 60pt 1fr !important;
+    gap: 10pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .agenda-time {
+    color: black !important;
+    padding-top: 10pt;
+    font-size: 11pt;
+  }
+
+  .agenda-card {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #c0c0c0 !important;
+    border-left: 3px solid #2dd4bf !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .agenda-title {
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .agenda-meta {
+    color: #444 !important;
+    font-size: 9pt;
+  }
+
+  .agenda-rationale {
+    background: #f4f4f4 !important;
+    color: #111 !important;
+    font-size: 9.5pt;
+    padding: 6pt 8pt !important;
+  }
+
+  .agenda-pill {
+    background: #efefef !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+    font-size: 8pt;
+  }
+
+  /* Avoid the sticky/positioning rules carrying into print. */
+  .agenda-strategy,
+  .agenda-card,
+  .agenda-row {
+    position: static !important;
   }
 }

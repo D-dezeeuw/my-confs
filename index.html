@@ -177,12 +177,23 @@
     </div>
 
     <section class="agenda" data-if="view === 'agenda'">
+      <header class="print-only print-header">
+        <h1>DevWorld 2026 — My personalised agenda</h1>
+      </header>
       <header class="agenda-header">
         <button class="ghost back" data-action="click" data-fn="goSchedule">← Schedule</button>
         <div class="agenda-heading">
           <h2>Your DevWorld 2026</h2>
           <span class="muted">{{agendaItems.length}} picks</span>
         </div>
+        <button
+          class="ghost agenda-export"
+          data-if="agendaItems.length > 0"
+          data-action="click"
+          data-fn="exportPdf"
+        >
+          Save PDF
+        </button>
       </header>
 
       <div class="agenda-empty" data-if="agendaItems.length === 0">
