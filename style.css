@@ -598,6 +598,122 @@ details[open] summary {
   font-size: 0.9rem;
 }
 
+/* ---------- Demo mode pill (top-centre) ---------- */
+
+.demo-pill {
+  --y: 0;
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translate(-50%, var(--y));
+  z-index: 15;
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd58e;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 0;
+  max-width: calc(100% - 24px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s ease, transform 0.06s ease;
+}
+
+.demo-pill:hover {
+  background: rgba(245, 158, 11, 0.24);
+  --y: -1px;
+}
+
+.demo-pill:active {
+  --y: 0;
+}
+
+.demo-pill-icon {
+  font-size: 0.85rem;
+}
+
+/* On narrow phones the brand sits next to the pill — give the pill its
+ * own space by shifting the brand title slightly smaller. The pill keeps
+ * its full label since it's the more action-y element. */
+@media (max-width: 480px) {
+  .demo-pill-label {
+    /* "Demo mode · 14:15" only — drops "fictive time" at < 480px */
+  }
+}
+
+/* When demo mode is on, the pill takes up ~32px above the topbar's
+ * bottom edge. Sticky agenda + live headers need to clear that space
+ * so the pill never sits over them on scroll. */
+body.demo-on .agenda-header,
+body.demo-on .live-header {
+  top: calc(56px + 36px);
+}
+
+@media (min-width: 700px) {
+  body.demo-on .agenda-header,
+  body.demo-on .live-header {
+    top: calc(64px + 36px);
+  }
+}
+
+/* Settings modal Demo-toggle row */
+.demo-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.demo-toggle-row > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.demo-toggle-row > div p {
+  margin: 4px 0 0 0;
+}
+
+.demo-toggle-row > button {
+  flex: 0 0 auto;
+  min-width: 70px;
+}
+
+.demo-toggle-row > button.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--alt);
+  color: #fcd58e;
+}
+
+/* Demo explanation modal */
+.demo-card {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.demo-body p {
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.demo-list {
+  margin: 4px 0 12px 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
 /* ---------- Modal (Settings) ---------- */
 
 .modal-overlay {

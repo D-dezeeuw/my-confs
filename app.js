@@ -268,7 +268,13 @@ const STORAGE = {
   overallAdvice: "dw26.overallAdvice",
   notifyEnabled: "dw26.notifyEnabled",
   notifiedIds: "dw26.notifiedIds",
+  demoMode: "dw26.demoMode",
 };
+
+// Demo mode freezes the clock at this minute-of-day so the live timeline
+// has a sensible "now" to centre on. The conference is over, but with
+// demo mode on the app still demos cleanly.
+const DEMO_TIME_MINUTES = 14 * 60 + 15; // 14:15
 
 // Reminder fires this many minutes before a recommended session start.
 const NOTIFY_LEAD_MIN = 5;
@@ -286,6 +292,7 @@ const NOTIFY_POLL_MS = 30_000;
   wireHashRouting();
   wireGlobalKeys();
   wireClock();
+  wireDemoModeClass();
   wireTimelineAutoScroll();
   wireNotifications();
   await loadCompanies();
@@ -395,6 +402,8 @@ function initialState() {
     safeJson(localStorage.getItem(STORAGE.notifiedIds), [])
   );
   setValue("notifyScheduledCount", 0);
+  setValue("demoMode", isDemoModeOn());
+  setValue("demoModalOpen", false);
 }
 
 function initialNotificationPermission() {
@@ -411,8 +420,16 @@ function deriveViewFromHash() {
 }
 
 function currentMinutes() {
+  if (isDemoModeOn()) return DEMO_TIME_MINUTES;
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
+}
+
+function isDemoModeOn() {
+  // Read directly from localStorage so currentMinutes() is correct even
+  // during initialState() before spektrum's state has been merged.
+  // Default: ON (the conference is over).
+  return localStorage.getItem(STORAGE.demoMode) !== "0";
 }
 
 function safeJson(s, fallback) {
@@ -915,6 +932,27 @@ function registerHandlers() {
     if (ev && ev.target === el) setValue("selectedSession", null);
   });
 
+  defineFn("openDemoExplanation", () => {
+    setValue("demoModalOpen", true);
+  });
+
+  defineFn("closeDemoExplanation", () => {
+    setValue("demoModalOpen", false);
+  });
+
+  defineFn("backdropCloseDemo", (el, _state, _delta, _value, ev) => {
+    if (ev && ev.target === el) setValue("demoModalOpen", false);
+  });
+
+  defineFn("toggleDemoMode", (_el, state) => {
+    const next = !state.demoMode;
+    // Persist first so currentMinutes() reads the new value before the
+    // setValues below evaluate it.
+    localStorage.setItem(STORAGE.demoMode, next ? "1" : "0");
+    setValue("demoMode", next);
+    setValue("timelineNow", currentMinutes());
+  });
+
   defineFn("enableNotifications", async () => {
     if (!("Notification" in window)) return;
     let perm = Notification.permission;
@@ -1094,13 +1132,26 @@ function wireGlobalKeys() {
     if (e.key === "Escape") {
       setValue("settingsOpen", false);
       setValue("selectedSession", null);
+      setValue("demoModalOpen", false);
     }
   });
 }
 
 
 function wireClock() {
-  setInterval(() => setValue("timelineNow", currentMinutes()), 60_000);
+  setInterval(() => {
+    // Demo mode freezes the clock — no per-minute writes needed.
+    if (isDemoModeOn()) return;
+    setValue("timelineNow", currentMinutes());
+  }, 60_000);
+}
+
+// Mirror state.demoMode → body class so CSS can shift sticky headers
+// down to clear the demo pill at the top.
+function wireDemoModeClass() {
+  addSystem(["demoMode"], (state) => {
+    document.body.classList.toggle("demo-on", !!state.demoMode);
+  });
 }
 
 // ---------- Notifications scheduler ------------------------------------
@@ -1127,6 +1178,10 @@ function wireNotifications() {
 
 function pollNotifications() {
   if (!("Notification" in window)) return;
+  // Demo mode freezes the clock; firing real-time reminders against a
+  // fictive "now" would only confuse. The Test button still fires
+  // immediately for permission verification.
+  if (isDemoModeOn()) return;
   // Read live state (delta-merged) so we see the most recent notifyEnabled
   // and notifiedIds without waiting for another tick.
   const enabled = getLiveValue("notifyEnabled");

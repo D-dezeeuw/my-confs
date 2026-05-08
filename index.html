@@ -19,6 +19,18 @@
     </script>
   </head>
   <body>
+    <button
+      class="demo-pill"
+      data-if="demoMode"
+      data-action="click"
+      data-fn="openDemoExplanation"
+      title="Demo mode — click for details"
+      aria-label="Demo mode is active. Click for an explanation."
+    >
+      <span class="demo-pill-icon" aria-hidden="true">⚠</span>
+      <span class="demo-pill-label">Demo mode · 14:15 fictive time</span>
+    </button>
+
     <header class="topbar">
       <div class="brand">
         <h1>DevWorld 2026</h1>
@@ -451,6 +463,76 @@
     </button>
 
     <div
+      class="modal-overlay demo-overlay"
+      data-if="demoModalOpen"
+      data-action="click"
+      data-fn="backdropCloseDemo"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="demo-title"
+    >
+      <section class="modal-card demo-card">
+        <header class="modal-header">
+          <h2 id="demo-title">⚠ Demo mode</h2>
+          <button
+            class="ghost modal-close"
+            data-action="click"
+            data-fn="closeDemoExplanation"
+            aria-label="Close demo info"
+          >
+            ×
+          </button>
+        </header>
+        <div class="modal-body demo-body">
+          <p>
+            DevWorld 2026 is over. To keep the app demo-able, the clock is
+            <strong>frozen at 14:15</strong> — so the live timeline always has a
+            sensible "now" to centre on, and recommendations / agenda views
+            still feel populated.
+          </p>
+          <p>
+            What demo mode changes:
+          </p>
+          <ul class="demo-list">
+            <li>
+              <strong>Live timeline</strong> shows the now-line at 14:15 and
+              auto-scrolls there on entry.
+            </li>
+            <li>
+              <strong>Notifications</strong> are paused — real-time reminders
+              against a fictive clock would only confuse. The
+              <em>Test</em> button still works to verify permission.
+            </li>
+            <li>
+              Everything else (recommendations, agenda, filters, exports)
+              works as normal.
+            </li>
+          </ul>
+          <p class="muted small">
+            To run against the real wall-clock for an actual conference,
+            toggle demo mode off below.
+          </p>
+        </div>
+        <footer class="modal-footer">
+          <button
+            class="ghost"
+            data-action="click"
+            data-fn="toggleDemoMode"
+          >
+            {{demoMode ? 'Turn demo mode off' : 'Turn demo mode on'}}
+          </button>
+          <button
+            class="primary"
+            data-action="click"
+            data-fn="closeDemoExplanation"
+          >
+            Got it
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div
       class="modal-overlay session-detail-overlay"
       data-if="selectedSession"
       data-action="click"
@@ -588,6 +670,23 @@
               <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
             </select>
           </label>
+          <div class="demo-toggle-row">
+            <div>
+              <strong>Demo mode</strong>
+              <p class="muted small">
+                Freeze the clock at 14:15 so the live timeline + agenda
+                stay demo-able after the conference. Notifications pause.
+              </p>
+            </div>
+            <button
+              class="ghost"
+              :class="{active: demoMode}"
+              data-action="click"
+              data-fn="toggleDemoMode"
+            >
+              {{demoMode ? 'On' : 'Off'}}
+            </button>
+          </div>
         </div>
         <footer class="modal-footer">
           <button class="ghost" data-action="click" data-fn="closeSettings">Cancel</button>
