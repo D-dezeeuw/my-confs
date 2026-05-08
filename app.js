@@ -1189,29 +1189,34 @@ function faviconUrl() {
   return new URL("./favicon.svg", window.location.href).href;
 }
 
-// Scroll the timeline so the now-line sits ~28% from the left edge,
-// but only when the user enters the live view (not on every per-minute
-// clock tick — that would yank a user mid-scroll back to now).
+// Scroll the timeline so the now-line sits ~28% from the left edge once
+// per visit to the live view. We can't gate on "view changed since last
+// fire" because of a multi-tick race: on a fresh load with hash=#live,
+// the system fires once with view=live and nowOffset=null (still
+// computing), then again with the real nowOffset — by which time
+// "view changed" is false and we'd never scroll.
 //
-// We also defer the scroll into a requestAnimationFrame: spektrum runs
-// systems in registration order, so this system fires *before* the
-// data-if binder flips .live from display:none to display:block. At
-// that moment .timeline-scroll.clientWidth is still 0 and scrollTo()
-// is a no-op (or gets reset by the upcoming display flip). rAF lets the
-// next frame apply the display change and layout, then we scroll.
+// Instead we track whether the scroll has actually landed. The flag
+// resets when the user leaves the view, so a return visit re-scrolls.
+// Per-minute clock ticks updating nowOffset don't re-fire the scroll
+// either, so a user mid-scroll never gets yanked back to now.
+//
+// requestAnimationFrame defers the scroll so spektrum's data-if binder
+// has a chance to flip .live from display:none to display:block before
+// we read clientWidth.
 function wireTimelineAutoScroll() {
-  let prevView = null;
+  let scrolled = false;
   addSystem(["view", "nowOffset"], (state) => {
-    const viewChanged = state.view !== prevView;
-    prevView = state.view;
-    if (state.view !== "live") return;
-    if (!viewChanged) return;
+    if (state.view !== "live") {
+      scrolled = false;
+      return;
+    }
+    if (scrolled) return;
     const offset = state.nowOffset;
     if (offset == null) return;
     requestAnimationFrame(() => {
       const el = refs.timelineScroll;
       if (!el || el.clientWidth === 0) return;
-      // Read the live value so it matches the desktop override too.
       const stageCol =
         parseInt(
           getComputedStyle(document.documentElement)
@@ -1222,6 +1227,7 @@ function wireTimelineAutoScroll() {
       const nowX = stageCol + offset;
       const target = Math.max(0, nowX - el.clientWidth * 0.28);
       el.scrollTo({ left: target, behavior: "auto" });
+      scrolled = true;
     });
   });
 }
