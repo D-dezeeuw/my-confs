@@ -1,28 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="my-confs · DevWorld 2026 demo">
   <title>my-confs · DevWorld 2026 demo</title>
 
+  <defs>
+    <linearGradient id="flow" x1="0" y1="20" x2="64" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff" />
+      <stop offset="0.38" stop-color="#2dd4bf" />
+      <stop offset="0.7" stop-color="#f59e0b" />
+      <stop offset="1" stop-color="#ef4444" />
+    </linearGradient>
+  </defs>
+
   <!-- App surface -->
   <rect width="64" height="64" rx="14" fill="#171922" />
 
-  <!-- Clock ring (clock centered slightly below middle to leave room for the live dot) -->
-  <circle cx="32" cy="35" r="20" fill="none" stroke="#2a2e3b" stroke-width="2" />
+  <!-- Flowing track behind the clock — a single S-curve from upper-left
+       down through the middle and up to lower-right, gradient-stroked
+       in the app's pick / accent / alt / danger palette. -->
+  <path
+    d="M -4 18 C 14 36, 20 46, 32 36 S 50 22, 68 44"
+    fill="none"
+    stroke="url(#flow)"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+
+  <!-- Smaller clock face. fill = surface so the gradient line is hidden
+       inside the clock area without needing a separate halo. -->
+  <circle cx="32" cy="34" r="13" fill="#171922" stroke="#2a2e3b" stroke-width="1.6" />
 
   <!-- Cardinal ticks: 12, 3, 6, 9 -->
-  <line x1="32" y1="17" x2="32" y2="21" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
-  <line x1="50" y1="35" x2="46" y2="35" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
-  <line x1="32" y1="53" x2="32" y2="49" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
-  <line x1="14" y1="35" x2="18" y2="35" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
+  <line x1="32" y1="23" x2="32" y2="25.5" stroke="#9aa1b2" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="45" y1="34" x2="42.5" y2="34" stroke="#9aa1b2" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="32" y1="45" x2="32" y2="42.5" stroke="#9aa1b2" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="19" y1="34" x2="21.5" y2="34" stroke="#9aa1b2" stroke-width="1.5" stroke-linecap="round" />
 
-  <!-- Hour hand pointing to 14:24 (72° clockwise from 12) -->
-  <line x1="32" y1="35" x2="43" y2="31" stroke="#7c5cff" stroke-width="3" stroke-linecap="round" />
+  <!-- Hour hand: 14:24 → 72° clockwise from 12 -->
+  <line x1="32" y1="34" x2="40" y2="31.5" stroke="#7c5cff" stroke-width="2.4" stroke-linecap="round" />
 
-  <!-- Minute hand at :24 (144° clockwise from 12) -->
-  <line x1="32" y1="35" x2="42" y2="48" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" />
+  <!-- Minute hand: :24 → 144° clockwise from 12 -->
+  <line x1="32" y1="34" x2="38" y2="42" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" />
 
   <!-- Pivot -->
-  <circle cx="32" cy="35" r="2" fill="#e6e8ee" />
+  <circle cx="32" cy="34" r="1.6" fill="#e6e8ee" />
 
-  <!-- "Live" indicator -->
-  <circle cx="50" cy="14" r="7" fill="none" stroke="#ef4444" stroke-width="1.5" opacity="0.45" />
-  <circle cx="50" cy="14" r="4" fill="#ef4444" />
+  <!-- Live indicator (top-right) -->
+  <circle cx="50" cy="14" r="6" fill="none" stroke="#ef4444" stroke-width="1.2" opacity="0.45" />
+  <circle cx="50" cy="14" r="3.5" fill="#ef4444" />
 </svg>
