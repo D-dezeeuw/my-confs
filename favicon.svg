@@ -1,18 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="my-confs timeline icon">
-  <title>my-confs</title>
-  <!-- Surface (matches app --surface) -->
-  <rect width="64" height="64" rx="14" fill="#171922"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="my-confs · DevWorld 2026 demo">
+  <title>my-confs · DevWorld 2026 demo</title>
 
-  <!-- Stage column hint on the left -->
-  <rect x="6" y="10" width="6" height="44" rx="2" fill="#1f222d"/>
+  <!-- App surface -->
+  <rect width="64" height="64" rx="14" fill="#171922" />
 
-  <!-- Track lanes: one accent (pick) + three muted -->
-  <rect x="14" y="12" width="36" height="6" rx="3" fill="#7c5cff"/>
-  <rect x="14" y="22" width="28" height="6" rx="3" fill="#3a3554"/>
-  <rect x="14" y="32" width="42" height="6" rx="3" fill="#3a3554"/>
-  <rect x="14" y="42" width="22" height="6" rx="3" fill="#3a3554"/>
+  <!-- Clock ring (clock centered slightly below middle to leave room for the live dot) -->
+  <circle cx="32" cy="35" r="20" fill="none" stroke="#2a2e3b" stroke-width="2" />
 
-  <!-- "Now" indicator: vertical red line + cap dot -->
-  <line x1="32" y1="8" x2="32" y2="56" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="32" cy="8" r="2.6" fill="#ef4444"/>
+  <!-- Cardinal ticks: 12, 3, 6, 9 -->
+  <line x1="32" y1="17" x2="32" y2="21" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
+  <line x1="50" y1="35" x2="46" y2="35" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
+  <line x1="32" y1="53" x2="32" y2="49" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
+  <line x1="14" y1="35" x2="18" y2="35" stroke="#9aa1b2" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Hour hand pointing to 14:24 (72° clockwise from 12) -->
+  <line x1="32" y1="35" x2="43" y2="31" stroke="#7c5cff" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Minute hand at :24 (144° clockwise from 12) -->
+  <line x1="32" y1="35" x2="42" y2="48" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" />
+
+  <!-- Pivot -->
+  <circle cx="32" cy="35" r="2" fill="#e6e8ee" />
+
+  <!-- "Live" indicator -->
+  <circle cx="50" cy="14" r="7" fill="none" stroke="#ef4444" stroke-width="1.5" opacity="0.45" />
+  <circle cx="50" cy="14" r="4" fill="#ef4444" />
 </svg>
