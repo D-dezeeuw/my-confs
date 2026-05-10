@@ -19,8 +19,7 @@ GitHub Pages.
 
 ```sh
 cd path/to/devworld26
-python3 -m http.server 8080
-# open http://localhost:8080
+npm start          # → npx http-server -p 0 (picks a free port and prints it)
 ```
 
 You need `data/sessions.json` and `vendor/spektrum.js` present — both are

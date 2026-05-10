@@ -4,7 +4,7 @@
   "description": "Static web app that takes the full DevWorld 2026 agenda, lets you describe your professional context, and asks an LLM (via [OpenRouter](https://openrouter.ai)) to pick the best session per time slot — plus alternatives — with a brief rationale for each.",
   "main": "app.js",
   "scripts": {
-    "start": "python3 -m http.server 8088"
+    "start": "npx --yes http-server -p 0"
   },
   "keywords": [],
   "author": "",
