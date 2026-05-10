@@ -12,6 +12,6 @@
   "type": "module",
   "dependencies": {
     "canvas-confetti": "^1.9.4",
-    "spektrum": "^0.4.1"
+    "spektrum": "^0.5.1"
   }
 }

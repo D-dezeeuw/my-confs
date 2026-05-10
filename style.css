@@ -50,6 +50,14 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* spektrum strips data-cloak from the bound root + descendants once
+ * bindDOM completes, so this hides the bind-time flash of literal
+ * "{{...}}" text. visibility:hidden preserves layout (no shift on
+ * reveal). */
+[data-cloak] {
+  visibility: hidden;
+}
+
 h1,
 h2,
 h3 {
